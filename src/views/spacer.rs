@@ -1,4 +1,4 @@
-use crate::{view::Constraints, View};
+use crate::{core::Constraints, View};
 use macroquad::math::Vec2;
 
 #[derive(Clone)]

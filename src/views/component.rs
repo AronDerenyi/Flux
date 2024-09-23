@@ -1,8 +1,4 @@
-use crate::{
-    view::{Constraints, Layout},
-    view_tree::Context,
-    View,
-};
+use crate::core::{Constraints, Context, Layout, View};
 
 pub trait Component: 'static + Clone {
     fn build(&self, ctx: &mut Context) -> impl View;

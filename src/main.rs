@@ -1,21 +1,13 @@
-mod component;
-mod view;
-mod view_tree;
+mod core;
 mod views;
 
-pub use component::Component;
+use core::{App, ContentBuilder, Context, View};
 use macroquad::prelude::*;
-use view::ContentBuilder;
-pub use view::View;
-use view_tree::{Context, ViewTree};
-use views::{Clickable, Column, Paddable, Spacer};
+use views::{Clickable, Column, Component, Paddable, Spacer};
 
 #[macroquad::main("RustUI")]
 async fn main() {
-    let mut tree = ViewTree::new(|| Main);
-    tree.build();
-    tree.print();
-
+    let mut app = App::new(Main);
     let debug_spacer = Spacer::new(Vec2::new(10.0, 10.0))
         .padding_all(10.0)
         .padding_all(10.0)
@@ -27,21 +19,11 @@ async fn main() {
     loop {
         clear_background(WHITE);
 
-        tree.build();
-
-        for node in tree.nodes.iter() {
-            draw_rectangle_lines(
-                node.layout.position.x,
-                node.layout.position.y,
-                node.layout.size.x,
-                node.layout.size.y,
-                2.0,
-                RED,
-            );
-        }
+        app.build();
+        app.draw();
 
         if is_mouse_button_pressed(MouseButton::Left) {
-            tree.interaction(mouse_position().into());
+            app.interact(mouse_position().into());
         }
 
         next_frame().await
@@ -63,7 +45,7 @@ impl Component for Main {
             padding: 10.0,
         });
 
-        Column::new(ContentBuilder::from_slice([
+        let view = Column::new(ContentBuilder::from_slice([
             Box::new(Spacer::new(Vec2::new(100.0, 100.0)).on_click({
                 let state = state.clone();
                 move || {
@@ -77,7 +59,8 @@ impl Component for Main {
                 }
             })),
         ]))
-        .spacing(state.clone().borrow().spacing)
-        .padding_all(state.clone().borrow().padding)
+        .spacing(state.borrow().spacing)
+        .padding_all(state.borrow().padding);
+        view
     }
 }

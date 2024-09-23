@@ -1,6 +1,5 @@
 use crate::{
-    view::{Constraints, ContentBuilder, Layout},
-    view_tree::Context,
+    core::{Constraints, ContentBuilder, Context, Layout},
     View,
 };
 use macroquad::math::Vec2;

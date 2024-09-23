@@ -1,8 +1,8 @@
 use dyn_clone::DynClone;
 use macroquad::math::Vec2;
-
-use crate::view_tree::Context;
 use std::{any::type_name, rc::Rc};
+
+use super::Context;
 
 #[allow(unused)]
 pub trait View: 'static + DynClone {
