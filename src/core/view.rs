@@ -1,11 +1,15 @@
+use super::{Context, Key};
+use core::hash::Hash;
 use dyn_clone::DynClone;
 use macroquad::math::Vec2;
-use std::{any::type_name, rc::Rc};
-
-use super::Context;
+use std::{any::type_name, marker::PhantomData, rc::Rc};
 
 #[allow(unused)]
-pub trait View: 'static + DynClone {
+pub trait View<K: Hash = ()>: 'static + DynClone {
+    fn get_key(&self) -> Key<K> {
+        Key::Path
+    }
+
     fn get_children(&self, ctx: &mut Context) -> Box<[Box<dyn View>]> {
         Default::default()
     }
@@ -95,11 +99,29 @@ impl ContentBuilder {
         Self::new(move || Box::new(views.clone()))
     }
 
-    pub fn from_Boxed_slice(views: Box<[Box<dyn View>]>) -> Self {
+    pub fn from_boxed_slice(views: Box<[Box<dyn View>]>) -> Self {
         Self::new(move || views.clone())
+    }
+
+    pub fn from_items<T, V: View, I: Iterator<Item = T>, F: Fn(T) -> V + 'static>(
+        items: I,
+        builder: F,
+    ) -> Self {
+        Self::from_boxed_slice(
+            items
+                .map::<Box<dyn View>, _>(|item| Box::new(builder(item)))
+                .collect(),
+        )
     }
 
     pub fn build(&self) -> Box<[Box<dyn View>]> {
         (self.builder)()
     }
+}
+
+#[macro_export]
+macro_rules! content {
+    [$($child:expr),+ $(,)?] => (
+        ContentBuilder::from_slice([$(Box::new($child)),+])
+    );
 }

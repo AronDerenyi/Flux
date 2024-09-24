@@ -17,7 +17,7 @@ pub struct App {
 impl App {
     pub fn new(root: impl View) -> Self {
         App {
-            root: ViewNode::new(root),
+            root: ViewNode::new(root.get_key().id(0, 0), Box::new(root)),
             states: HashMap::new(),
         }
     }
@@ -60,6 +60,31 @@ impl App {
             App::interact_node(child, point);
         }
     }
+
+    pub fn print(&self) {
+        App::print_node(&self.root, "".into());
+    }
+
+    fn print_node(node: &ViewNode, indent: String) {
+        println!(
+            "{}({}): {}",
+            node.view.get_debug_string(),
+            node.id,
+            size_of_val(&*node.view)
+        );
+        for (index, child) in node.children.iter().enumerate() {
+            let last = index == node.children.len() - 1;
+            print!("{}{} ", indent, if last { "╚" } else { "╠" });
+            App::print_node(
+                child,
+                if last {
+                    indent.clone() + "  ".into()
+                } else {
+                    indent.clone() + "║ ".into()
+                },
+            );
+        }
+    }
 }
 
 impl App {
@@ -72,11 +97,10 @@ impl App {
             .view
             .get_children(&mut Context::new(0, states))
             .iter()
-            .map(|v| ViewNode {
-                view: v.clone(),
-                children: Default::default(),
-                constraints: Default::default(),
-                layout: Default::default(),
+            .enumerate()
+            .map(|(i, v)| {
+                let id = v.get_key().id(node.id, i);
+                ViewNode::new(id, v.clone())
             })
             .collect::<Box<_>>();
         for child in node.children.iter_mut() {
