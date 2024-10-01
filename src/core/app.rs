@@ -1,82 +1,295 @@
+use super::{view_node::ViewNode, Constraints, Context, Layout};
+use crate::{
+    utils::id_vec::{Id, IdVec},
+    View,
+};
+use dyn_clone::DynClone;
+use itertools::{EitherOrBoth, Itertools};
 use macroquad::{color::RED, math::Vec2, shapes::draw_rectangle_lines};
-
-use super::{view_node::ViewNode, Context, Layout};
-use crate::View;
 use std::{
-    any::Any,
+    any::{type_name_of_val, Any, TypeId},
     cell::{Ref, RefCell, RefMut},
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     rc::Rc,
 };
 
 pub struct App {
-    root: ViewNode,
-    states: HashMap<usize, Rc<dyn Any>>,
+    nodes: IdVec<ViewNode>,
+    root: Id,
+    states: HashMap<Id, Rc<dyn Any>>,
+    debug: Debug,
+}
+
+#[derive(Default)]
+struct Debug {
+    new: HashSet<Id>,
+    rebuilt: HashSet<Id>,
+    layout_recalculated: HashSet<Id>,
 }
 
 impl App {
-    pub fn new(root: impl View) -> Self {
+    pub fn new<V: View>(root: V) -> Self {
+        let mut nodes = IdVec::new();
+        let root = nodes.insert(ViewNode::new(Box::new(root), None));
+
         App {
-            root: ViewNode::new(root.get_key().id(0, 0), Box::new(root)),
+            nodes,
+            root,
             states: HashMap::new(),
+            debug: Default::default(),
         }
     }
 
-    pub fn build(&mut self) {
-        self.build_tree();
-        self.calculate_constraints();
-        self.calculate_layouts();
+    pub fn update(&mut self, id: Id) {
+        self.debug.new.clear();
+        self.debug.rebuilt.clear();
+        self.debug.layout_recalculated.clear();
+        self.state_changed(id);
+    }
+
+    fn state_changed(&mut self, id: Id) {
+        self.debug.rebuilt.insert(id);
+        self.rebuild_children(id);
+
+        let node = &self.nodes[id];
+        let constraints_changed = node
+            .children
+            .iter()
+            .copied()
+            .any(|id| self.nodes[id].layout.is_none());
+
+        if constraints_changed {
+            let mut id = id;
+            let layout = loop {
+                let prev_constraints = self.nodes[id].constraints;
+                self.recalculate_constraints(id);
+                let node = &mut self.nodes[id];
+                if node.constraints != prev_constraints {
+                    node.layout = None;
+                }
+                if let Some(layout) = node.layout {
+                    break layout;
+                } else {
+                    if let Some(parent) = node.parent {
+                        id = parent;
+                    } else {
+                        break Layout {
+                            position: Vec2::ZERO,
+                            size: node.constraints.size,
+                        };
+                    }
+                }
+            };
+
+            self.recalculate_layouts(id, layout);
+        } else {
+            for child_id in node.children.clone() {
+                let child_node = &self.nodes[child_id];
+                self.recalculate_layouts(child_id, child_node.layout.unwrap());
+            }
+        }
+    }
+
+    /// Sets the given view as the view of the id. If it's the same as the previous view,
+    /// nothing changes. If there wasn't a previous view (the id is None) then an id is
+    /// created for it. The children's layouts are invalidated and if the view's constraints
+    /// changed then it's layout is also invalidated as it depends on the constraints.
+    fn rebuild(&mut self, parent: Id, view: Box<dyn View>, id: Option<Id>) -> Id {
+        let (id, prev_constraints) = if let Some(id) = id {
+            let node = &mut self.nodes[id];
+            node.parent = Some(parent);
+            // TODO: if node.view == view { return id }
+            node.view = view;
+            node.dirty = true;
+            self.debug.rebuilt.insert(id);
+            (id, Some(node.constraints))
+        } else {
+            let id = self.nodes.insert(ViewNode::new(view, Some(parent)));
+            self.debug.new.insert(id);
+            (id, None)
+        };
+
+        self.rebuild_children(id);
+        self.recalculate_constraints(id);
+
+        if let Some(prev_constraints) = prev_constraints {
+            let node = &mut self.nodes[id];
+            if prev_constraints != node.constraints {
+                node.layout = None;
+            }
+        }
+
+        id
+    }
+
+    /// Builds the children of the view with the given id.
+    fn rebuild_children(&mut self, id: Id) {
+        let node = &self.nodes[id];
+        let mut context = Context::new(id, &mut self.states);
+        let children = node.view.get_children(&mut context);
+        let (paired_children, unused_children) = self.pair_children(
+            children.into_vec().into_iter(),
+            node.children.iter().copied(),
+        );
+
+        for id in unused_children {
+            self.remove(id);
+        }
+
+        self.nodes[id].children = paired_children
+            .into_iter()
+            .map(|(child_view, child_id)| self.rebuild(id, child_view, child_id))
+            .collect();
+    }
+
+    /// Calculates the constraints of the view with the given id.
+    fn recalculate_constraints(&mut self, id: Id) {
+        let node = &self.nodes[id];
+        self.nodes[id].constraints = node.view.get_constraints(
+            &node
+                .children
+                .iter()
+                .copied()
+                .map(|id| self.nodes[id].constraints)
+                .collect::<Box<_>>(),
+        )
+    }
+
+    fn recalculate_layouts(&mut self, id: Id, layout: Layout) {
+        let node = &mut self.nodes[id];
+        if let Some(prev_layout) = node.layout {
+            if prev_layout == layout && !node.dirty {
+                return;
+            }
+        }
+        self.debug.layout_recalculated.insert(id);
+        node.layout = Some(layout);
+
+        let node = &self.nodes[id];
+        let child_ids = node.children.clone();
+        let child_layouts = node.view.get_children_layouts(
+            layout,
+            &child_ids
+                .iter()
+                .map(|child_id| self.nodes[*child_id].constraints)
+                .collect::<Box<_>>(),
+        );
+
+        for (child_id, child_layout) in child_ids.iter().zip(child_layouts) {
+            self.recalculate_layouts(*child_id, child_layout);
+        }
+    }
+
+    /// Pairs up new children with their previous ids based on their position
+    /// relative to the parent.
+    fn pair_children(
+        &self,
+        children: impl Iterator<Item = Box<dyn View>>,
+        child_indices: impl Iterator<Item = Id>,
+    ) -> (Vec<(Box<dyn View>, Option<Id>)>, Vec<Id>) {
+        let mut paired_children = Vec::new();
+        let mut unused_children = Vec::new();
+        for pair in children.zip_longest(child_indices) {
+            match pair {
+                EitherOrBoth::Both(child, id) => {
+                    let old_child = &self.nodes[id];
+                    if old_child.view.type_id() == child.type_id() {
+                        paired_children.push((child, Some(id)));
+                    } else {
+                        unused_children.push(id);
+                        paired_children.push((child, None));
+                    }
+                }
+                EitherOrBoth::Left(child) => paired_children.push((child, None)),
+                EitherOrBoth::Right(index) => unused_children.push(index),
+            }
+        }
+        (paired_children, unused_children)
+    }
+
+    fn remove(&mut self, id: Id) {
+        for child_id in self.nodes[id].children.clone() {
+            self.remove(child_id);
+        }
+        self.nodes.remove(id);
+        // TODO: Clean up states and other id bound properties and callbacks
     }
 
     pub fn draw(&self) {
-        App::draw_node(&self.root);
+        self.draw_node(self.root);
     }
 
-    fn draw_node(node: &ViewNode) {
-        draw_rectangle_lines(
-            node.layout.position.x,
-            node.layout.position.y,
-            node.layout.size.x,
-            node.layout.size.y,
-            2.0,
-            RED,
-        );
+    fn draw_node(&self, id: Id) {
+        let node = &self.nodes[id];
 
-        for child in node.children.iter() {
-            App::draw_node(child);
+        if let Some(layout) = node.layout {
+            draw_rectangle_lines(
+                layout.position.x,
+                layout.position.y,
+                layout.size.x,
+                layout.size.y,
+                2.0,
+                RED,
+            );
+        }
+
+        for child_id in node.children.iter() {
+            self.draw_node(*child_id);
         }
     }
 
     pub fn interact(&self, point: Vec2) {
-        App::interact_node(&self.root, point);
+        self.interact_node(self.root, point);
     }
 
-    fn interact_node(node: &ViewNode, point: Vec2) {
-        if node.layout.contains(point) {
-            node.view.interact();
+    fn interact_node(&self, id: Id, point: Vec2) {
+        let node = &self.nodes[id];
+
+        if let Some(layout) = node.layout {
+            if layout.contains(point) {
+                node.view.interact();
+            }
         }
 
-        for child in node.children.iter() {
-            App::interact_node(child, point);
+        for child_id in node.children.iter() {
+            self.interact_node(*child_id, point);
         }
     }
 
     pub fn print(&self) {
-        App::print_node(&self.root, "".into());
+        self.print_node(self.root, "".into());
     }
 
-    fn print_node(node: &ViewNode, indent: String) {
+    fn print_node(&self, id: Id, indent: String) {
+        let node = &self.nodes[id];
+
         println!(
-            "{}({}): {}",
-            node.view.get_debug_string(),
-            node.id,
-            size_of_val(&*node.view)
+            "{}({:?}): {}, {:?}{}{}{}",
+            node.view.debug_name(),
+            id,
+            size_of_val(&*node.view),
+            node.layout,
+            if self.debug.rebuilt.contains(&id) {
+                " rebuilt"
+            } else {
+                ""
+            },
+            if self.debug.new.contains(&id) {
+                " new"
+            } else {
+                ""
+            },
+            if self.debug.layout_recalculated.contains(&id) {
+                " layout"
+            } else {
+                ""
+            }
         );
-        for (index, child) in node.children.iter().enumerate() {
+        for (index, child_index) in node.children.iter().enumerate() {
             let last = index == node.children.len() - 1;
             print!("{}{} ", indent, if last { "╚" } else { "╠" });
-            App::print_node(
-                child,
+            self.print_node(
+                *child_index,
                 if last {
                     indent.clone() + "  ".into()
                 } else {
@@ -84,74 +297,5 @@ impl App {
                 },
             );
         }
-    }
-}
-
-impl App {
-    fn build_tree(&mut self) {
-        App::build_node(&mut self.root, &mut self.states);
-    }
-
-    fn build_node(node: &mut ViewNode, states: &mut HashMap<usize, Rc<dyn Any>>) {
-        node.children = node
-            .view
-            .get_children(&mut Context::new(0, states))
-            .iter()
-            .enumerate()
-            .map(|(i, v)| {
-                let id = v.get_key().id(node.id, i);
-                ViewNode::new(id, v.clone())
-            })
-            .collect::<Box<_>>();
-        for child in node.children.iter_mut() {
-            App::build_node(child, states);
-        }
-    }
-}
-
-impl App {
-    fn calculate_constraints(&mut self) {
-        App::calculate_node_constraints(&mut self.root);
-    }
-
-    fn calculate_node_constraints(node: &mut ViewNode) {
-        let child_constraints = node
-            .children
-            .iter_mut()
-            .map(|child| {
-                App::calculate_node_constraints(child);
-                child.constraints
-            })
-            .collect::<Box<[_]>>();
-
-        node.constraints = node.view.get_constraints(&child_constraints);
-    }
-}
-
-impl App {
-    fn calculate_layouts(&mut self) {
-        let layout = Layout {
-            position: Vec2::new(0.0, 0.0),
-            size: self.root.constraints.size,
-        };
-
-        App::calculate_node_layouts(&mut self.root, layout);
-    }
-
-    fn calculate_node_layouts(node: &mut ViewNode, layout: Layout) {
-        let child_constraints = node
-            .children
-            .iter_mut()
-            .map(|child| child.constraints)
-            .collect::<Box<[_]>>();
-
-        node.layout = layout;
-        node.view
-            .get_children_layouts(layout, &child_constraints)
-            .iter()
-            .zip(node.children.iter_mut())
-            .for_each(|(layout, child)| {
-                App::calculate_node_layouts(child, *layout);
-            });
     }
 }

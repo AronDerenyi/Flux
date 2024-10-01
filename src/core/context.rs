@@ -1,13 +1,15 @@
-use super::State;
+use crate::utils::id_vec::Id;
 use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 
+use super::State;
+
 pub struct Context<'a> {
-    id: usize,
-    states: &'a mut HashMap<usize, Rc<dyn Any>>,
+    id: Id,
+    states: &'a mut HashMap<Id, Rc<dyn Any>>,
 }
 
 impl Context<'_> {
-    pub(super) fn new<'a>(id: usize, states: &'a mut HashMap<usize, Rc<dyn Any>>) -> Context<'a> {
+    pub(super) fn new<'a>(id: Id, states: &'a mut HashMap<Id, Rc<dyn Any>>) -> Context<'a> {
         Context { id, states }
     }
 }

@@ -1,22 +1,30 @@
 use super::{Constraints, Layout};
-use crate::View;
+use crate::{utils::id_vec::Id, views::Spacer, View};
+use macroquad::math::Vec2;
+use std::{
+    any::Any,
+    cell::{Cell, RefCell},
+    rc::Rc,
+};
 
 pub struct ViewNode {
-    pub id: u64,
     pub view: Box<dyn View>,
-    pub children: Box<[ViewNode]>,
+    pub parent: Option<Id>,
+    pub children: Box<[Id]>,
     pub constraints: Constraints,
-    pub layout: Layout,
+    pub layout: Option<Layout>,
+    pub dirty: bool,
 }
 
 impl ViewNode {
-    pub fn new(id: u64, view: Box<dyn View>) -> Self {
+    pub fn new(view: Box<dyn View>, parent: Option<Id>) -> Self {
         ViewNode {
-            id,
             view,
-            children: Box::new([]),
-            constraints: Constraints::default(),
-            layout: Layout::default(),
+            parent,
+            children: Default::default(),
+            constraints: Default::default(),
+            layout: Default::default(),
+            dirty: true,
         }
     }
 }

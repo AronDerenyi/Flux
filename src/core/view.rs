@@ -1,15 +1,14 @@
-use super::{Context, Key};
+use super::Context;
 use core::hash::Hash;
 use dyn_clone::DynClone;
 use macroquad::math::Vec2;
-use std::{any::type_name, marker::PhantomData, rc::Rc};
+use std::{
+    any::{type_name, Any},
+    rc::Rc,
+};
 
 #[allow(unused)]
-pub trait View<K: Hash = ()>: 'static + DynClone {
-    fn get_key(&self) -> Key<K> {
-        Key::Path
-    }
-
+pub trait View: 'static + DynClone + Any {
     fn get_children(&self, ctx: &mut Context) -> Box<[Box<dyn View>]> {
         Default::default()
     }
@@ -28,8 +27,8 @@ pub trait View<K: Hash = ()>: 'static + DynClone {
         false
     }
 
-    fn get_debug_string(&self) -> &str {
-        let mut type_name = type_name::<Self>();
+    fn debug_name(&self) -> &str {
+        let mut type_name = std::any::type_name::<Self>();
         if let Some(generic_start) = type_name.find("<") {
             type_name = &type_name[..generic_start];
         }
@@ -42,12 +41,12 @@ pub trait View<K: Hash = ()>: 'static + DynClone {
 
 dyn_clone::clone_trait_object!(View);
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Constraints {
     pub size: Vec2,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Layout {
     pub position: Vec2,
     pub size: Vec2,

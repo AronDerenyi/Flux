@@ -1,14 +1,17 @@
 mod core;
+mod utils;
 mod views;
 
 use core::{App, ContentBuilder, Context, View};
 use macroquad::prelude::*;
+use utils::id_vec::Id;
 use views::{Clickable, Column, Component, Paddable, Row, Spacer};
 
 #[macroquad::main("RustUI")]
 async fn main() {
     let mut app = App::new(Main);
-    app.build();
+    app.update(Id(0));
+    // app.calculate_constraints(2);
     app.print();
 
     // let debug_spacer = Spacer::new(Vec2::new(10.0, 10.0))
@@ -26,7 +29,7 @@ async fn main() {
 
         if is_mouse_button_pressed(MouseButton::Left) {
             app.interact(mouse_position().into());
-            app.build();
+            app.update(Id(0));
             app.print();
         }
 
@@ -49,12 +52,14 @@ impl Component for Main {
             Spacer::new(Vec2::new(100.0, 100.0)).on_click({
                 let state = state.clone();
                 move || {
-                    state.borrow_mut().items.push(Vec2::new(100.0, 20.0));
+                    state.borrow_mut().items.push(Vec2::new(50.0, 50.0));
                 }
             }),
-            Column::new(ContentBuilder::from_items(
-                state.borrow().items.iter(),
-                |item| { Spacer::new(*item) }
+            Row::new(ContentBuilder::from_items(
+                state.borrow().items.iter().enumerate(),
+                |(index, item)| {
+                    Spacer::new(*item).on_click(move || println!("Clicked: {}", index))
+                }
             ))
         ])
         .spacing(10.0)
