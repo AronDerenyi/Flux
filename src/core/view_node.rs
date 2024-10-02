@@ -1,6 +1,6 @@
 use super::{Constraints, Layout};
 use crate::{utils::id_vec::Id, views::Spacer, View};
-use macroquad::math::Vec2;
+use macroquad::{color::Color, math::Vec2};
 use std::{
     any::Any,
     cell::{Cell, RefCell},
@@ -8,23 +8,34 @@ use std::{
 };
 
 pub struct ViewNode {
-    pub view: Box<dyn View>,
     pub parent: Option<Id>,
     pub children: Box<[Id]>,
+    pub view: Box<dyn View>,
+    pub dirty: bool,
     pub constraints: Constraints,
     pub layout: Option<Layout>,
-    pub dirty: bool,
+    pub graphics: Box<[Shape]>,
 }
 
 impl ViewNode {
     pub fn new(view: Box<dyn View>, parent: Option<Id>) -> Self {
         ViewNode {
-            view,
             parent,
             children: Default::default(),
+            view,
+            dirty: true,
             constraints: Default::default(),
             layout: Default::default(),
-            dirty: true,
+            graphics: Default::default(),
         }
     }
+}
+
+pub enum Shape {
+    Rect {
+        position: Vec2,
+        size: Vec2,
+        fill: Option<Color>,
+        stroke: Option<(f32, Color)>,
+    },
 }

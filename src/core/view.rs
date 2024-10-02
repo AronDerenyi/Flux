@@ -1,4 +1,4 @@
-use super::Context;
+use super::{view_node::Shape, Context};
 use core::hash::Hash;
 use dyn_clone::DynClone;
 use macroquad::math::Vec2;
@@ -20,6 +20,10 @@ pub trait View: 'static + DynClone + Any {
         layout: Layout,
         child_constraints: &[Constraints],
     ) -> Box<[Layout]> {
+        Default::default()
+    }
+
+    fn draw(&self, layout: Layout) -> Box<[Shape]> {
         Default::default()
     }
 

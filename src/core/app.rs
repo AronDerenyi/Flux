@@ -1,11 +1,18 @@
-use super::{view_node::ViewNode, Constraints, Context, Layout};
+use super::{
+    view_node::{Shape, ViewNode},
+    Constraints, Context, Layout,
+};
 use crate::{
     utils::id_vec::{Id, IdVec},
     View,
 };
 use dyn_clone::DynClone;
 use itertools::{EitherOrBoth, Itertools};
-use macroquad::{color::RED, math::Vec2, shapes::draw_rectangle_lines};
+use macroquad::{
+    color::RED,
+    math::Vec2,
+    shapes::{draw_rectangle, draw_rectangle_lines},
+};
 use std::{
     any::{type_name_of_val, Any, TypeId},
     cell::{Ref, RefCell, RefMut},
@@ -44,12 +51,9 @@ impl App {
         self.debug.new.clear();
         self.debug.rebuilt.clear();
         self.debug.layout_recalculated.clear();
-        self.state_changed(id);
-    }
 
-    fn state_changed(&mut self, id: Id) {
         self.debug.rebuilt.insert(id);
-        self.rebuild_children(id);
+        self.build_children(id);
 
         let node = &self.nodes[id];
         let constraints_changed = node
@@ -62,7 +66,7 @@ impl App {
             let mut id = id;
             let layout = loop {
                 let prev_constraints = self.nodes[id].constraints;
-                self.recalculate_constraints(id);
+                self.calculate_constraints(id);
                 let node = &mut self.nodes[id];
                 if node.constraints != prev_constraints {
                     node.layout = None;
@@ -81,11 +85,11 @@ impl App {
                 }
             };
 
-            self.recalculate_layouts(id, layout);
+            self.calculate_layouts(id, layout);
         } else {
             for child_id in node.children.clone() {
                 let child_node = &self.nodes[child_id];
-                self.recalculate_layouts(child_id, child_node.layout.unwrap());
+                self.calculate_layouts(child_id, child_node.layout.unwrap());
             }
         }
     }
@@ -94,7 +98,7 @@ impl App {
     /// nothing changes. If there wasn't a previous view (the id is None) then an id is
     /// created for it. The children's layouts are invalidated and if the view's constraints
     /// changed then it's layout is also invalidated as it depends on the constraints.
-    fn rebuild(&mut self, parent: Id, view: Box<dyn View>, id: Option<Id>) -> Id {
+    fn build(&mut self, parent: Id, view: Box<dyn View>, id: Option<Id>) -> Id {
         let (id, prev_constraints) = if let Some(id) = id {
             let node = &mut self.nodes[id];
             node.parent = Some(parent);
@@ -109,8 +113,8 @@ impl App {
             (id, None)
         };
 
-        self.rebuild_children(id);
-        self.recalculate_constraints(id);
+        self.build_children(id);
+        self.calculate_constraints(id);
 
         if let Some(prev_constraints) = prev_constraints {
             let node = &mut self.nodes[id];
@@ -123,7 +127,7 @@ impl App {
     }
 
     /// Builds the children of the view with the given id.
-    fn rebuild_children(&mut self, id: Id) {
+    fn build_children(&mut self, id: Id) {
         let node = &self.nodes[id];
         let mut context = Context::new(id, &mut self.states);
         let children = node.view.get_children(&mut context);
@@ -138,12 +142,12 @@ impl App {
 
         self.nodes[id].children = paired_children
             .into_iter()
-            .map(|(child_view, child_id)| self.rebuild(id, child_view, child_id))
+            .map(|(child_view, child_id)| self.build(id, child_view, child_id))
             .collect();
     }
 
     /// Calculates the constraints of the view with the given id.
-    fn recalculate_constraints(&mut self, id: Id) {
+    fn calculate_constraints(&mut self, id: Id) {
         let node = &self.nodes[id];
         self.nodes[id].constraints = node.view.get_constraints(
             &node
@@ -155,7 +159,7 @@ impl App {
         )
     }
 
-    fn recalculate_layouts(&mut self, id: Id, layout: Layout) {
+    fn calculate_layouts(&mut self, id: Id, layout: Layout) {
         let node = &mut self.nodes[id];
         if let Some(prev_layout) = node.layout {
             if prev_layout == layout && !node.dirty {
@@ -164,6 +168,12 @@ impl App {
         }
         self.debug.layout_recalculated.insert(id);
         node.layout = Some(layout);
+
+        // Only draw if the layout changed.
+        // Drawing should be moved to a separate pass
+        // Change tracing should be handled more comprehensively
+        // Change should be a typed u8 (view: 0b01, layout: 0b10, view | layout: 0b11)
+        node.graphics = node.view.draw(layout);
 
         let node = &self.nodes[id];
         let child_ids = node.children.clone();
@@ -176,7 +186,7 @@ impl App {
         );
 
         for (child_id, child_layout) in child_ids.iter().zip(child_layouts) {
-            self.recalculate_layouts(*child_id, child_layout);
+            self.calculate_layouts(*child_id, child_layout);
         }
     }
 
@@ -222,15 +232,22 @@ impl App {
     fn draw_node(&self, id: Id) {
         let node = &self.nodes[id];
 
-        if let Some(layout) = node.layout {
-            draw_rectangle_lines(
-                layout.position.x,
-                layout.position.y,
-                layout.size.x,
-                layout.size.y,
-                2.0,
-                RED,
-            );
+        for shape in node.graphics.iter() {
+            match shape {
+                Shape::Rect {
+                    position,
+                    size,
+                    fill,
+                    stroke,
+                } => {
+                    if let Some(color) = fill {
+                        draw_rectangle(position.x, position.y, size.x, size.y, *color)
+                    }
+                    if let Some((width, color)) = stroke {
+                        draw_rectangle_lines(position.x, position.y, size.x, size.y, *width, *color)
+                    }
+                }
+            }
         }
 
         for child_id in node.children.iter() {
