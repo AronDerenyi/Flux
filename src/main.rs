@@ -29,11 +29,11 @@ async fn main() {
 
         if is_mouse_button_pressed(MouseButton::Left) {
             app.interact(mouse_position().into());
-            app.update(Id(3));
+            app.update(Id(2));
             app.print();
         }
 
-        next_frame().await
+        next_frame().await;
     }
 }
 

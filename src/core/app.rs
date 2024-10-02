@@ -1,5 +1,5 @@
 use super::{
-    view_node::{Shape, ViewNode},
+    view_node::{Change, Shape, ViewNode},
     Constraints, Context, Layout,
 };
 use crate::{
@@ -23,14 +23,6 @@ pub struct App {
     nodes: IdVec<ViewNode>,
     root: Id,
     states: HashMap<Id, Rc<dyn Any>>,
-    debug: Debug,
-}
-
-#[derive(Default)]
-struct Debug {
-    new: HashSet<Id>,
-    rebuilt: HashSet<Id>,
-    layout_recalculated: HashSet<Id>,
 }
 
 impl App {
@@ -42,16 +34,10 @@ impl App {
             nodes,
             root,
             states: HashMap::new(),
-            debug: Default::default(),
         }
     }
 
     pub fn update(&mut self, id: Id) {
-        self.debug.new.clear();
-        self.debug.rebuilt.clear();
-        self.debug.layout_recalculated.clear();
-
-        self.debug.rebuilt.insert(id);
         self.build_children(id);
 
         let node = &self.nodes[id];
@@ -109,12 +95,10 @@ impl App {
             }
 
             node.view = view;
-            node.dirty = true;
-            self.debug.rebuilt.insert(id);
+            node.change.add(Change::VIEW);
             (id, Some(node.constraints))
         } else {
             let id = self.nodes.insert(ViewNode::new(view, Some(parent)));
-            self.debug.new.insert(id);
             (id, None)
         };
 
@@ -167,11 +151,10 @@ impl App {
     fn calculate_layouts(&mut self, id: Id, layout: Layout) {
         let node = &mut self.nodes[id];
         if let Some(prev_layout) = node.layout {
-            if prev_layout == layout && !node.dirty {
+            if prev_layout == layout && !node.change.contains(Change::VIEW | Change::LAYOUT) {
                 return;
             }
         }
-        self.debug.layout_recalculated.insert(id);
         node.layout = Some(layout);
 
         // Only draw if the layout changed.
@@ -179,7 +162,7 @@ impl App {
         // Change tracing should be handled more comprehensively
         // Change should be a typed u8 (view: 0b01, layout: 0b10, view | layout: 0b11)
         node.graphics = node.view.draw(layout);
-        node.dirty = false;
+        node.change.clear();
 
         let node = &self.nodes[id];
         let child_ids = node.children.clone();
@@ -287,26 +270,11 @@ impl App {
         let node = &self.nodes[id];
 
         println!(
-            "{}({:?}): {}, {:?}{}{}{}",
+            "{}({:?}): {}, {:?}",
             node.view.debug_name(),
             id,
             size_of_val(&*node.view),
-            node.layout,
-            if self.debug.rebuilt.contains(&id) {
-                " rebuilt"
-            } else {
-                ""
-            },
-            if self.debug.new.contains(&id) {
-                " new"
-            } else {
-                ""
-            },
-            if self.debug.layout_recalculated.contains(&id) {
-                " layout"
-            } else {
-                ""
-            }
+            node.change
         );
         for (index, child_index) in node.children.iter().enumerate() {
             let last = index == node.children.len() - 1;
