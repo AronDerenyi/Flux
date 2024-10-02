@@ -10,7 +10,7 @@ use std::{
 pub struct ViewNode {
     pub parent: Option<Id>,
     pub children: Box<[Id]>,
-    pub view: Box<dyn View>,
+    pub view: Rc<dyn View>,
     pub dirty: bool,
     pub constraints: Constraints,
     pub layout: Option<Layout>,
@@ -18,7 +18,7 @@ pub struct ViewNode {
 }
 
 impl ViewNode {
-    pub fn new(view: Box<dyn View>, parent: Option<Id>) -> Self {
+    pub fn new(view: Rc<dyn View>, parent: Option<Id>) -> Self {
         ViewNode {
             parent,
             children: Default::default(),

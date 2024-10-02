@@ -1,14 +1,15 @@
+use std::rc::Rc;
+
 use crate::core::{Constraints, Context, Layout, Shape, View, ViewBuilder};
 use macroquad::color::Color;
 
-#[derive(Clone)]
-pub struct Background<V: View + Clone> {
+pub struct Background {
     color: Color,
-    view: ViewBuilder<V>,
+    view: ViewBuilder,
 }
 
-pub trait Backgroundable: View + Clone {
-    fn background(self, color: Color) -> Background<Self> {
+pub trait Backgroundable: View + Sized {
+    fn background(self, color: Color) -> Background {
         Background {
             color,
             view: ViewBuilder::from_view(self),
@@ -16,12 +17,12 @@ pub trait Backgroundable: View + Clone {
     }
 }
 
-impl<V: View + Clone> Backgroundable for V {}
+impl<V: View + Sized> Backgroundable for V {}
 
-impl<V: View + Clone> View for Background<V> {
-    fn get_children(&self, _ctx: &mut Context) -> Box<[Box<dyn View>]> {
+impl View for Background {
+    fn get_children(&self, _ctx: &mut Context) -> Box<[Rc<dyn View>]> {
         let view = self.view.build();
-        Box::new([Box::new(view)])
+        Box::new([view])
     }
 
     fn get_constraints(&self, child_constraints: &[Constraints]) -> Constraints {

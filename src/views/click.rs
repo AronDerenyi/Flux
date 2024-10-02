@@ -1,16 +1,18 @@
+use std::rc::Rc;
+
 use crate::{
     core::{Constraints, Context, Layout, ViewBuilder},
     View,
 };
 
 #[derive(Clone)]
-pub struct Click<V: View + Clone, A: Fn() + Clone> {
+pub struct Click<A: Fn()> {
     action: A,
-    view: ViewBuilder<V>,
+    view: ViewBuilder,
 }
 
-pub trait Clickable: View + Clone {
-    fn on_click<A: Fn() + Clone + 'static>(self, action: A) -> Click<Self, A> {
+pub trait Clickable: View + Sized {
+    fn on_click<A: Fn() + 'static>(self, action: A) -> Click<A> {
         Click {
             action,
             view: ViewBuilder::from_view(self),
@@ -18,12 +20,12 @@ pub trait Clickable: View + Clone {
     }
 }
 
-impl<V: View + Clone> Clickable for V {}
+impl<V: View + Sized> Clickable for V {}
 
-impl<V: View + Clone, A: Fn() + Clone + 'static> View for Click<V, A> {
-    fn get_children(&self, _ctx: &mut Context) -> Box<[Box<dyn View>]> {
+impl<A: Fn() + 'static> View for Click<A> {
+    fn get_children(&self, _ctx: &mut Context) -> Box<[Rc<dyn View>]> {
         let view = self.view.build();
-        Box::new([Box::new(view)])
+        Box::new([view])
     }
 
     fn get_constraints(&self, child_constraints: &[Constraints]) -> Constraints {

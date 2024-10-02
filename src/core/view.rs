@@ -1,6 +1,5 @@
 use super::{view_node::Shape, Context};
 use core::hash::Hash;
-use dyn_clone::DynClone;
 use macroquad::math::Vec2;
 use std::{
     any::{type_name, Any},
@@ -8,8 +7,8 @@ use std::{
 };
 
 #[allow(unused)]
-pub trait View: 'static + DynClone + Any {
-    fn get_children(&self, ctx: &mut Context) -> Box<[Box<dyn View>]> {
+pub trait View: 'static + Any {
+    fn get_children(&self, ctx: &mut Context) -> Box<[Rc<dyn View>]> {
         Default::default()
     }
 
@@ -43,8 +42,6 @@ pub trait View: 'static + DynClone + Any {
     }
 }
 
-dyn_clone::clone_trait_object!(View);
-
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Constraints {
     pub size: Vec2,
@@ -66,43 +63,44 @@ impl Layout {
 }
 
 #[derive(Clone)]
-pub struct ViewBuilder<V: View> {
-    builder: Rc<dyn Fn() -> V>,
+pub struct ViewBuilder {
+    builder: Rc<dyn Fn() -> Rc<dyn View>>,
 }
 
-impl<V: View + Clone> ViewBuilder<V> {
-    pub fn new<F: Fn() -> V + 'static>(builder: F) -> Self {
+impl ViewBuilder {
+    pub fn new<F: Fn() -> Rc<dyn View> + 'static>(builder: F) -> Self {
         Self {
             builder: Rc::new(builder),
         }
     }
 
-    pub fn from_view(view: V) -> Self {
-        Self::new(move || view.clone())
+    pub fn from_view<V: View>(view: V) -> Self {
+        let reference = Rc::new(view);
+        Self::new(move || reference.clone())
     }
 
-    pub fn build(&self) -> V {
+    pub fn build(&self) -> Rc<dyn View> {
         (self.builder)()
     }
 }
 
 #[derive(Clone)]
 pub struct ContentBuilder {
-    builder: Rc<dyn Fn() -> Box<[Box<dyn View>]>>,
+    builder: Rc<dyn Fn() -> Box<[Rc<dyn View>]>>,
 }
 
 impl ContentBuilder {
-    pub fn new<F: Fn() -> Box<[Box<dyn View>]> + 'static>(builder: F) -> Self {
+    pub fn new<F: Fn() -> Box<[Rc<dyn View>]> + 'static>(builder: F) -> Self {
         Self {
             builder: Rc::new(builder),
         }
     }
 
-    pub fn from_slice<const N: usize>(views: [Box<dyn View>; N]) -> Self {
+    pub fn from_slice<const N: usize>(views: [Rc<dyn View>; N]) -> Self {
         Self::new(move || Box::new(views.clone()))
     }
 
-    pub fn from_boxed_slice(views: Box<[Box<dyn View>]>) -> Self {
+    pub fn from_boxed_slice(views: Box<[Rc<dyn View>]>) -> Self {
         Self::new(move || views.clone())
     }
 
@@ -112,12 +110,12 @@ impl ContentBuilder {
     ) -> Self {
         Self::from_boxed_slice(
             items
-                .map::<Box<dyn View>, _>(|item| Box::new(builder(item)))
+                .map::<Rc<dyn View>, _>(|item| Rc::new(builder(item)))
                 .collect(),
         )
     }
 
-    pub fn build(&self) -> Box<[Box<dyn View>]> {
+    pub fn build(&self) -> Box<[Rc<dyn View>]> {
         (self.builder)()
     }
 }
@@ -125,6 +123,6 @@ impl ContentBuilder {
 #[macro_export]
 macro_rules! content {
     [$($child:expr),+ $(,)?] => (
-        ContentBuilder::from_slice([$(Box::new($child)),+])
+        ContentBuilder::from_slice([$(std::rc::Rc::new($child)),+])
     );
 }

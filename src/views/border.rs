@@ -1,15 +1,17 @@
+use std::rc::Rc;
+
 use crate::core::{Constraints, Context, Layout, Shape, View, ViewBuilder};
 use macroquad::color::Color;
 
 #[derive(Clone)]
-pub struct Border<V: View + Clone> {
+pub struct Border {
     width: f32,
     color: Color,
-    view: ViewBuilder<V>,
+    view: ViewBuilder,
 }
 
-pub trait Borderable: View + Clone {
-    fn border(self, width: f32, color: Color) -> Border<Self> {
+pub trait Borderable: View + Sized {
+    fn border(self, width: f32, color: Color) -> Border {
         Border {
             width,
             color,
@@ -18,12 +20,12 @@ pub trait Borderable: View + Clone {
     }
 }
 
-impl<V: View + Clone> Borderable for V {}
+impl<V: View + Sized> Borderable for V {}
 
-impl<V: View + Clone> View for Border<V> {
-    fn get_children(&self, _ctx: &mut Context) -> Box<[Box<dyn View>]> {
+impl View for Border {
+    fn get_children(&self, _ctx: &mut Context) -> Box<[Rc<dyn View>]> {
         let view = self.view.build();
-        Box::new([Box::new(view)])
+        Box::new([view])
     }
 
     fn get_constraints(&self, child_constraints: &[Constraints]) -> Constraints {

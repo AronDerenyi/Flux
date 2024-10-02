@@ -6,7 +6,6 @@ use crate::{
     utils::id_vec::{Id, IdVec},
     View,
 };
-use dyn_clone::DynClone;
 use itertools::{EitherOrBoth, Itertools};
 use macroquad::{
     color::RED,
@@ -37,7 +36,7 @@ struct Debug {
 impl App {
     pub fn new<V: View>(root: V) -> Self {
         let mut nodes = IdVec::new();
-        let root = nodes.insert(ViewNode::new(Box::new(root), None));
+        let root = nodes.insert(ViewNode::new(Rc::new(root), None));
 
         App {
             nodes,
@@ -98,11 +97,17 @@ impl App {
     /// nothing changes. If there wasn't a previous view (the id is None) then an id is
     /// created for it. The children's layouts are invalidated and if the view's constraints
     /// changed then it's layout is also invalidated as it depends on the constraints.
-    fn build(&mut self, parent: Id, view: Box<dyn View>, id: Option<Id>) -> Id {
+    fn build(&mut self, parent: Id, view: Rc<dyn View>, id: Option<Id>) -> Id {
         let (id, prev_constraints) = if let Some(id) = id {
             let node = &mut self.nodes[id];
             node.parent = Some(parent);
-            // TODO: if node.view == view { return id }
+
+            if Rc::ptr_eq(&node.view, &view) {
+                // underlying struct is immutable (if no interior mutability is used)
+                // so if the references match the structs match too
+                return id;
+            }
+
             node.view = view;
             node.dirty = true;
             self.debug.rebuilt.insert(id);
@@ -174,6 +179,7 @@ impl App {
         // Change tracing should be handled more comprehensively
         // Change should be a typed u8 (view: 0b01, layout: 0b10, view | layout: 0b11)
         node.graphics = node.view.draw(layout);
+        node.dirty = false;
 
         let node = &self.nodes[id];
         let child_ids = node.children.clone();
@@ -194,9 +200,9 @@ impl App {
     /// relative to the parent.
     fn pair_children(
         &self,
-        children: impl Iterator<Item = Box<dyn View>>,
+        children: impl Iterator<Item = Rc<dyn View>>,
         child_indices: impl Iterator<Item = Id>,
-    ) -> (Vec<(Box<dyn View>, Option<Id>)>, Vec<Id>) {
+    ) -> (Vec<(Rc<dyn View>, Option<Id>)>, Vec<Id>) {
         let mut paired_children = Vec::new();
         let mut unused_children = Vec::new();
         for pair in children.zip_longest(child_indices) {

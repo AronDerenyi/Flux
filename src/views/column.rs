@@ -1,10 +1,11 @@
+use std::rc::Rc;
+
 use crate::{
     core::{Constraints, ContentBuilder, Context, Layout},
     View,
 };
 use macroquad::math::Vec2;
 
-#[derive(Clone)]
 pub struct Column {
     spacing: f32,
     content: ContentBuilder,
@@ -24,7 +25,7 @@ impl Column {
 }
 
 impl View for Column {
-    fn get_children(&self, _ctx: &mut Context) -> Box<[Box<dyn View>]> {
+    fn get_children(&self, _ctx: &mut Context) -> Box<[Rc<dyn View>]> {
         self.content.build()
     }
 

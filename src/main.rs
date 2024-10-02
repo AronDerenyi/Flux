@@ -4,7 +4,6 @@ mod views;
 
 use core::{App, ContentBuilder, Context, View};
 use macroquad::prelude::*;
-use std::cell::Cell;
 use utils::id_vec::Id;
 use views::{Backgroundable, Borderable, Clickable, Column, Component, Paddable, Row, Spacer};
 
@@ -30,7 +29,7 @@ async fn main() {
 
         if is_mouse_button_pressed(MouseButton::Left) {
             app.interact(mouse_position().into());
-            app.update(Id(2));
+            app.update(Id(3));
             app.print();
         }
 
@@ -49,9 +48,9 @@ impl Component for Main {
     fn build(&self, ctx: &mut Context) -> impl View {
         let state = ctx.state(|| MainState {
             items: vec![
-                // Vec2::new(50.0, 50.0),
-                // Vec2::new(50.0, 50.0),
-                // Vec2::new(50.0, 50.0),
+                Vec2::new(50.0, 50.0),
+                Vec2::new(50.0, 50.0),
+                Vec2::new(50.0, 50.0),
             ],
         });
 
