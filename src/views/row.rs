@@ -12,6 +12,13 @@ pub struct Row {
     content: ContentBuilder,
 }
 
+#[macro_export]
+macro_rules! row {
+    [$($content:tt)+] => {
+        views::row(content![$($content)+])
+    };
+}
+
 pub fn row(content: ContentBuilder) -> Row {
     Row {
         spacing: 0.0,

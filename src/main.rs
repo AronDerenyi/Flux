@@ -64,7 +64,7 @@ impl Component for Main {
             ],
         });
 
-        return column(content![
+        return column![
             spacer(Vec2::new(100.0, 100.0)).background(RED).on_click({
                 let state = state.clone();
                 move || {
@@ -77,7 +77,7 @@ impl Component for Main {
                 |(index, item)| { Item { index, size: *item } }
             ))
             .spacing(10.0)
-        ])
+        ]
         .spacing(10.0)
         .padding_all(10.0);
     }

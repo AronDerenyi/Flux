@@ -12,6 +12,13 @@ pub struct Column {
     content: ContentBuilder,
 }
 
+#[macro_export]
+macro_rules! column {
+    [$($content:tt)+] => {
+        views::column(content![$($content)+])
+    };
+}
+
 pub fn column(content: ContentBuilder) -> Column {
     Column {
         spacing: 0.0,
