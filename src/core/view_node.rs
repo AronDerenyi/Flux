@@ -17,7 +17,7 @@ pub struct ViewNode {
     pub change: Change,
     pub view: Rc<dyn View>,
     pub constraints: Constraints,
-    pub layout: Option<Layout>,
+    pub layout: Layout,
     pub graphics: Box<[Shape]>,
 }
 
@@ -40,9 +40,10 @@ pub struct Change(u8);
 
 impl Change {
     pub const NONE: Self = Self(0);
-    pub const VIEW: Self = Self(0b001);
-    pub const CONSTRAINTS: Self = Self(0b010);
-    pub const LAYOUT: Self = Self(0b100);
+    pub const VIEW: Self = Self(0b0001);
+    pub const CONSTRAINTS: Self = Self(0b0010);
+    pub const CHILD_CONSTRAINTS: Self = Self(0b0100);
+    pub const LAYOUT: Self = Self(0b1000);
     pub const ALL: Self = Self(u8::MAX);
 
     pub fn add(&mut self, change: Self) {
@@ -84,16 +85,22 @@ impl BitXor for Change {
 
 impl Debug for Change {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let changes = [Self::VIEW, Self::CONSTRAINTS, Self::LAYOUT]
-            .into_iter()
-            .filter(|change| self.contains(*change))
-            .map::<String, _>(|change| match change {
-                Self::VIEW => "view".into(),
-                Self::CONSTRAINTS => "constraints".into(),
-                Self::LAYOUT => "layout".into(),
-                _ => "unknown".into(),
-            })
-            .join(", ");
+        let changes = [
+            Self::VIEW,
+            Self::CONSTRAINTS,
+            Self::CHILD_CONSTRAINTS,
+            Self::LAYOUT,
+        ]
+        .into_iter()
+        .filter(|change| self.contains(*change))
+        .map::<String, _>(|change| match change {
+            Self::VIEW => "view".into(),
+            Self::CONSTRAINTS => "constraints".into(),
+            Self::CHILD_CONSTRAINTS => "child constraints".into(),
+            Self::LAYOUT => "layout".into(),
+            _ => "unknown".into(),
+        })
+        .join(", ");
 
         f.write_str("[")?;
         f.write_str(&changes)?;

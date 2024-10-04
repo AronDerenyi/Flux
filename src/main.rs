@@ -12,7 +12,10 @@ async fn main() {
     let mut app = App::new(Main.border(4.0, BLACK).padding_all(16.0));
     app.update(Id(0));
     // app.calculate_constraints(2);
-    app.print();
+    // app.print();
+
+    let mut test = Some(String::from(""));
+    let a = test.take();
 
     // let debug_spacer = Spacer::new(Vec2::new(10.0, 10.0))
     //     .padding_all(10.0)
@@ -30,7 +33,7 @@ async fn main() {
         if is_mouse_button_pressed(MouseButton::Left) {
             app.interact(mouse_position().into());
             app.update(Id(2));
-            app.print();
+            // app.print();
         }
 
         next_frame().await;
@@ -48,9 +51,9 @@ impl Component for Main {
     fn build(&self, ctx: &mut Context) -> impl View {
         let state = ctx.state(|| MainState {
             items: vec![
-                Vec2::new(50.0, 50.0),
-                Vec2::new(50.0, 50.0),
-                Vec2::new(50.0, 50.0),
+                Vec2::new(20.0, 20.0),
+                // Vec2::new(50.0, 50.0),
+                // Vec2::new(50.0, 50.0),
             ],
         });
 

@@ -38,53 +38,63 @@ impl App {
     }
 
     pub fn update(&mut self, id: Id) {
+        self.nodes[id].change.add(Change::VIEW);
+
         self.build_children(id);
+        let constraints_changed = self.calculate_constraints(id).is_changed();
 
-        let node = &self.nodes[id];
-        let constraints_changed = node
-            .children
-            .iter()
-            .copied()
-            .any(|id| self.nodes[id].layout.is_none());
+        let change_root = if constraints_changed {
+            let mut change_root = self.nodes[id].parent;
 
-        if constraints_changed {
-            let mut id = id;
-            let layout = loop {
-                let prev_constraints = self.nodes[id].constraints;
-                self.calculate_constraints(id);
+            loop {
+                let Some(id) = change_root else { break };
+
+                let node = &self.nodes[id];
+                let constraints = node.view.get_constraints(
+                    &node
+                        .children
+                        .iter()
+                        .map(|i| self.nodes[*i].constraints)
+                        .collect_vec(),
+                );
+
                 let node = &mut self.nodes[id];
-                if node.constraints != prev_constraints {
-                    node.layout = None;
-                }
-                if let Some(layout) = node.layout {
-                    break layout;
+                node.change.add(Change::CHILD_CONSTRAINTS);
+                if constraints != node.constraints {
+                    node.constraints = constraints;
+                    node.change.add(Change::CONSTRAINTS);
+                    change_root = node.parent;
                 } else {
-                    if let Some(parent) = node.parent {
-                        id = parent;
-                    } else {
-                        break Layout {
-                            position: Vec2::ZERO,
-                            size: node.constraints.size,
-                        };
-                    }
+                    break;
                 }
-            };
-
-            self.calculate_layouts(id, layout);
-        } else {
-            for child_id in node.children.clone() {
-                let child_node = &self.nodes[child_id];
-                self.calculate_layouts(child_id, child_node.layout.unwrap());
             }
-        }
+
+            if let Some(id) = change_root {
+                id
+            } else {
+                let node = &mut self.nodes[self.root];
+                let layout = Layout {
+                    position: Vec2::ZERO,
+                    size: node.constraints.size,
+                };
+                if layout != node.layout {
+                    node.layout = layout;
+                    node.change.add(Change::LAYOUT);
+                }
+                self.root
+            }
+        } else {
+            id
+        };
+
+        self.calculate_layouts(change_root);
+        self.calculate_graphics(change_root);
+        self.print();
+        self.reset_changes(change_root);
     }
 
-    /// Sets the given view as the view of the id. If it's the same as the previous view,
-    /// nothing changes. If there wasn't a previous view (the id is None) then an id is
-    /// created for it. The children's layouts are invalidated and if the view's constraints
-    /// changed then it's layout is also invalidated as it depends on the constraints.
     fn build(&mut self, parent: Id, view: Rc<dyn View>, id: Option<Id>) -> Id {
-        let (id, prev_constraints) = if let Some(id) = id {
+        let id = if let Some(id) = id {
             let node = &mut self.nodes[id];
             node.parent = Some(parent);
 
@@ -96,22 +106,12 @@ impl App {
 
             node.view = view;
             node.change.add(Change::VIEW);
-            (id, Some(node.constraints))
+            id
         } else {
-            let id = self.nodes.insert(ViewNode::new(view, Some(parent)));
-            (id, None)
+            self.nodes.insert(ViewNode::new(view, Some(parent)))
         };
 
         self.build_children(id);
-        self.calculate_constraints(id);
-
-        if let Some(prev_constraints) = prev_constraints {
-            let node = &mut self.nodes[id];
-            if prev_constraints != node.constraints {
-                node.layout = None;
-            }
-        }
-
         id
     }
 
@@ -135,47 +135,65 @@ impl App {
             .collect();
     }
 
-    /// Calculates the constraints of the view with the given id.
-    fn calculate_constraints(&mut self, id: Id) {
+    fn calculate_constraints(&mut self, id: Id) -> Changing<Constraints> {
         let node = &self.nodes[id];
-        self.nodes[id].constraints = node.view.get_constraints(
-            &node
-                .children
-                .iter()
-                .copied()
-                .map(|id| self.nodes[id].constraints)
-                .collect::<Box<_>>(),
-        )
+        if !node.change.contains(Change::VIEW) {
+            return Changing::Unchanged(node.constraints);
+        }
+
+        let child_ids = node.children.clone().into_vec();
+        let mut child_constraints_changed = false;
+        let child_constraints = child_ids
+            .into_iter()
+            .map(|id| {
+                let constraints = self.calculate_constraints(id);
+                child_constraints_changed |= constraints.is_changed();
+                constraints.get()
+            })
+            .collect::<Vec<_>>();
+
+        let node = &mut self.nodes[id];
+        let constraints = node.view.get_constraints(&child_constraints);
+
+        if child_constraints_changed {
+            node.change.add(Change::CHILD_CONSTRAINTS);
+        }
+
+        if constraints != node.constraints {
+            node.constraints = constraints;
+            node.change.add(Change::CONSTRAINTS);
+            Changing::Changed(constraints)
+        } else {
+            Changing::Unchanged(constraints)
+        }
     }
 
-    fn calculate_layouts(&mut self, id: Id, layout: Layout) {
-        let node = &mut self.nodes[id];
-        if let Some(prev_layout) = node.layout {
-            if prev_layout == layout && !node.change.contains(Change::VIEW | Change::LAYOUT) {
-                return;
-            }
-        }
-        node.layout = Some(layout);
-
-        // Only draw if the layout changed.
-        // Drawing should be moved to a separate pass
-        // Change tracing should be handled more comprehensively
-        // Change should be a typed u8 (view: 0b01, layout: 0b10, view | layout: 0b11)
-        node.graphics = node.view.draw(layout);
-        node.change.clear();
-
+    fn calculate_layouts(&mut self, id: Id) {
         let node = &self.nodes[id];
+        if !node
+            .change
+            .contains(Change::VIEW | Change::CHILD_CONSTRAINTS | Change::LAYOUT)
+        {
+            return;
+        }
+
         let child_ids = node.children.clone();
-        let child_layouts = node.view.get_children_layouts(
-            layout,
-            &child_ids
-                .iter()
-                .map(|child_id| self.nodes[*child_id].constraints)
-                .collect::<Box<_>>(),
-        );
+        let child_constraints = child_ids
+            .iter()
+            .map(|child_id| self.nodes[*child_id].constraints)
+            .collect::<Vec<_>>();
+
+        let child_layouts = node
+            .view
+            .get_children_layouts(node.layout, &child_constraints);
 
         for (child_id, child_layout) in child_ids.iter().zip(child_layouts) {
-            self.calculate_layouts(*child_id, child_layout);
+            let child_node = &mut self.nodes[*child_id];
+            if child_layout != child_node.layout {
+                child_node.layout = child_layout;
+                child_node.change.add(Change::LAYOUT);
+            }
+            self.calculate_layouts(*child_id);
         }
     }
 
@@ -212,6 +230,33 @@ impl App {
         }
         self.nodes.remove(id);
         // TODO: Clean up states and other id bound properties and callbacks
+    }
+
+    fn calculate_graphics(&mut self, id: Id) {
+        let node = &mut self.nodes[id];
+        if !node.change.contains(Change::ALL) {
+            return;
+        }
+
+        if node.change.contains(Change::VIEW | Change::LAYOUT) {
+            node.graphics = node.view.draw(node.layout);
+        }
+
+        for child_id in node.children.clone() {
+            self.calculate_graphics(child_id);
+        }
+    }
+
+    fn reset_changes(&mut self, id: Id) {
+        let node = &mut self.nodes[id];
+        if !node.change.contains(Change::ALL) {
+            return;
+        }
+
+        node.change.clear();
+        for child_id in node.children.clone() {
+            self.reset_changes(child_id);
+        }
     }
 
     pub fn draw(&self) {
@@ -251,10 +296,8 @@ impl App {
     fn interact_node(&self, id: Id, point: Vec2) {
         let node = &self.nodes[id];
 
-        if let Some(layout) = node.layout {
-            if layout.contains(point) {
-                node.view.interact();
-            }
+        if node.layout.contains(point) {
+            node.view.interact();
         }
 
         for child_id in node.children.iter() {
@@ -270,11 +313,12 @@ impl App {
         let node = &self.nodes[id];
 
         println!(
-            "{}({:?}): {}, {:?}",
+            "{}({:?}): {}, {:?}, {:?}",
             node.view.debug_name(),
             id,
             size_of_val(&*node.view),
-            node.change
+            node.change,
+            node.constraints.size
         );
         for (index, child_index) in node.children.iter().enumerate() {
             let last = index == node.children.len() - 1;
@@ -287,6 +331,27 @@ impl App {
                     indent.clone() + "║ ".into()
                 },
             );
+        }
+    }
+}
+
+enum Changing<T = ()> {
+    Changed(T),
+    Unchanged(T),
+}
+
+impl<T> Changing<T> {
+    fn get(self) -> T {
+        match self {
+            Self::Changed(value) => value,
+            Self::Unchanged(value) => value,
+        }
+    }
+
+    fn is_changed(&self) -> bool {
+        match self {
+            Self::Changed(_) => true,
+            Self::Unchanged(_) => false,
         }
     }
 }
