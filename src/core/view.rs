@@ -6,8 +6,8 @@ use std::{
     rc::Rc,
 };
 
-#[allow(unused)]
-pub trait View: 'static + Any {
+#[allow(unused, private_bounds)]
+pub trait View: 'static + ViewEq {
     fn get_children(&self, ctx: &mut Context) -> Box<[Rc<dyn View>]> {
         Default::default()
     }
@@ -42,6 +42,29 @@ pub trait View: 'static + Any {
     }
 }
 
+trait ViewEq {
+    fn as_any(&self) -> &dyn Any;
+    fn changed(&self, previous: &dyn Any) -> bool;
+}
+
+impl<T: 'static + PartialEq> ViewEq for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn changed(&self, previous: &dyn Any) -> bool {
+        previous
+            .downcast_ref::<T>()
+            .map_or(false, |previous| self.eq(previous))
+    }
+}
+
+impl PartialEq for dyn View {
+    fn eq(&self, other: &Self) -> bool {
+        ViewEq::changed(self, ViewEq::as_any(other))
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Constraints {
     pub size: Vec2,
@@ -62,9 +85,14 @@ impl Layout {
     }
 }
 
-#[derive(Clone)]
 pub struct ViewBuilder {
     builder: Rc<dyn Fn() -> Rc<dyn View>>,
+}
+
+impl PartialEq for ViewBuilder {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.builder, &other.builder)
+    }
 }
 
 impl ViewBuilder {
@@ -87,6 +115,12 @@ impl ViewBuilder {
 #[derive(Clone)]
 pub struct ContentBuilder {
     builder: Rc<dyn Fn() -> Box<[Rc<dyn View>]>>,
+}
+
+impl PartialEq for ContentBuilder {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.builder, &other.builder)
+    }
 }
 
 impl ContentBuilder {

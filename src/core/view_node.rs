@@ -1,5 +1,5 @@
 use super::{Constraints, Layout};
-use crate::{utils::id_vec::Id, views::Spacer, View};
+use crate::{utils::id_vec::Id, View};
 use itertools::Itertools;
 use macroquad::{color::Color, math::Vec2};
 use std::{
@@ -15,6 +15,7 @@ pub struct ViewNode {
     pub parent: Option<Id>,
     pub children: Box<[Id]>,
     pub change: Change,
+
     pub view: Rc<dyn View>,
     pub constraints: Constraints,
     pub layout: Layout,
@@ -22,7 +23,7 @@ pub struct ViewNode {
 }
 
 impl ViewNode {
-    pub fn new(view: Rc<dyn View>, parent: Option<Id>) -> Self {
+    pub fn new(parent: Option<Id>, view: Rc<dyn View>) -> Self {
         ViewNode {
             parent,
             children: Default::default(),

@@ -5,10 +5,15 @@ use crate::{
     View,
 };
 
-#[derive(Clone)]
 pub struct Click<A: Fn()> {
     action: A,
     view: ViewBuilder,
+}
+
+impl<A: Fn()> PartialEq for Click<A> {
+    fn eq(&self, other: &Self) -> bool {
+        false
+    }
 }
 
 pub trait Clickable: View + Sized {

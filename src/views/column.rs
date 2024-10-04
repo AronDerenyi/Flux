@@ -6,19 +6,20 @@ use crate::{
 };
 use macroquad::math::Vec2;
 
+#[derive(PartialEq)]
 pub struct Column {
     spacing: f32,
     content: ContentBuilder,
 }
 
-impl Column {
-    pub fn new(content: ContentBuilder) -> Self {
-        Self {
-            spacing: 0.0,
-            content,
-        }
+pub fn column(content: ContentBuilder) -> Column {
+    Column {
+        spacing: 0.0,
+        content,
     }
+}
 
+impl Column {
     pub fn spacing(self, spacing: f32) -> Self {
         Self { spacing, ..self }
     }

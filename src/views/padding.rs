@@ -6,7 +6,7 @@ use crate::{
 };
 use macroquad::math::Vec2;
 
-#[derive(Clone)]
+#[derive(PartialEq)]
 pub struct Padding {
     start: f32,
     end: f32,

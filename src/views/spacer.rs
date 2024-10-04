@@ -1,15 +1,13 @@
 use crate::{core::Constraints, View};
 use macroquad::math::Vec2;
 
-#[derive(Clone)]
+#[derive(PartialEq)]
 pub struct Spacer {
     size: Vec2,
 }
 
-impl Spacer {
-    pub fn new(size: Vec2) -> Self {
-        Self { size }
-    }
+pub fn spacer(size: Vec2) -> Spacer {
+    Spacer { size }
 }
 
 impl View for Spacer {

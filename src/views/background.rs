@@ -3,6 +3,7 @@ use std::rc::Rc;
 use crate::core::{Constraints, Context, Layout, Shape, View, ViewBuilder};
 use macroquad::color::Color;
 
+#[derive(PartialEq)]
 pub struct Background {
     color: Color,
     view: ViewBuilder,

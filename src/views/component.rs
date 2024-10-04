@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::core::{Constraints, Context, Layout, View};
 
-pub trait Component: 'static {
+pub trait Component: 'static + PartialEq {
     fn build(&self, ctx: &mut Context) -> impl View;
 }
 

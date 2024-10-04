@@ -28,7 +28,7 @@ pub struct App {
 impl App {
     pub fn new<V: View>(root: V) -> Self {
         let mut nodes = IdVec::new();
-        let root = nodes.insert(ViewNode::new(Rc::new(root), None));
+        let root = nodes.insert(ViewNode::new(None, Rc::new(root)));
 
         App {
             nodes,
@@ -72,15 +72,7 @@ impl App {
             if let Some(id) = change_root {
                 id
             } else {
-                let node = &mut self.nodes[self.root];
-                let layout = Layout {
-                    position: Vec2::ZERO,
-                    size: node.constraints.size,
-                };
-                if layout != node.layout {
-                    node.layout = layout;
-                    node.change.add(Change::LAYOUT);
-                }
+                self.calculate_root_layout();
                 self.root
             }
         } else {
@@ -102,13 +94,15 @@ impl App {
                 // underlying struct is immutable (if no interior mutability is used)
                 // so if the references match the structs match too
                 return id;
+            } else if *node.view == *view {
+                return id;
             }
 
             node.view = view;
             node.change.add(Change::VIEW);
             id
         } else {
-            self.nodes.insert(ViewNode::new(view, Some(parent)))
+            self.nodes.insert(ViewNode::new(Some(parent), view))
         };
 
         self.build_children(id);
@@ -194,6 +188,18 @@ impl App {
                 child_node.change.add(Change::LAYOUT);
             }
             self.calculate_layouts(*child_id);
+        }
+    }
+
+    fn calculate_root_layout(&mut self) {
+        let node = &mut self.nodes[self.root];
+        let layout = Layout {
+            position: Vec2::ZERO,
+            size: node.constraints.size,
+        };
+        if layout != node.layout {
+            node.layout = layout;
+            node.change.add(Change::LAYOUT);
         }
     }
 
@@ -296,12 +302,12 @@ impl App {
     fn interact_node(&self, id: Id, point: Vec2) {
         let node = &self.nodes[id];
 
-        if node.layout.contains(point) {
-            node.view.interact();
-        }
-
         for child_id in node.children.iter() {
             self.interact_node(*child_id, point);
+        }
+
+        if node.layout.contains(point) {
+            node.view.interact();
         }
     }
 
@@ -313,12 +319,11 @@ impl App {
         let node = &self.nodes[id];
 
         println!(
-            "{}({:?}): {}, {:?}, {:?}",
+            "{}({:?}): {}, {:?}",
             node.view.debug_name(),
             id,
             size_of_val(&*node.view),
             node.change,
-            node.constraints.size
         );
         for (index, child_index) in node.children.iter().enumerate() {
             let last = index == node.children.len() - 1;

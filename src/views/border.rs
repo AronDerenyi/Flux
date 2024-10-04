@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::core::{Constraints, Context, Layout, Shape, View, ViewBuilder};
 use macroquad::color::Color;
 
-#[derive(Clone)]
+#[derive(PartialEq)]
 pub struct Border {
     width: f32,
     color: Color,

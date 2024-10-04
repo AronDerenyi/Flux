@@ -4,8 +4,9 @@ mod views;
 
 use core::{App, ContentBuilder, Context, View};
 use macroquad::prelude::*;
+use std::any::Any;
 use utils::id_vec::Id;
-use views::{Backgroundable, Borderable, Clickable, Column, Component, Paddable, Row, Spacer};
+use views::{column, row, spacer, Backgroundable, Borderable, Clickable, Component, Paddable};
 
 #[macroquad::main("RustUI")]
 async fn main() {
@@ -40,8 +41,14 @@ async fn main() {
     }
 }
 
-#[derive(Clone)]
+#[derive(PartialEq)]
 struct Main;
+
+#[derive(PartialEq)]
+struct Item {
+    index: usize,
+    size: Vec2,
+}
 
 struct MainState {
     items: Vec<Vec2>,
@@ -57,27 +64,31 @@ impl Component for Main {
             ],
         });
 
-        return Column::new(content![
-            Spacer::new(Vec2::new(100.0, 100.0))
-                .background(RED)
-                .on_click({
-                    let state = state.clone();
-                    move || {
-                        state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
-                    }
-                }),
-            Row::new(ContentBuilder::from_items(
-                state.borrow().items.iter().enumerate(),
-                |(index, item)| {
-                    Spacer::new(*item)
-                        .border(4.0, BLACK)
-                        .background(BLUE)
-                        .on_click(move || println!("Clicked: {}", index))
+        return column(content![
+            spacer(Vec2::new(100.0, 100.0)).background(RED).on_click({
+                let state = state.clone();
+                move || {
+                    state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
+                    state.borrow_mut().items[0].y += 10.0;
                 }
+            }),
+            row(ContentBuilder::from_items(
+                state.borrow().items.iter().enumerate(),
+                |(index, item)| { Item { index, size: *item } }
             ))
             .spacing(10.0)
         ])
         .spacing(10.0)
         .padding_all(10.0);
+    }
+}
+
+impl Component for Item {
+    fn build(&self, ctx: &mut Context) -> impl View {
+        let index = self.index.to_owned();
+        spacer(self.size)
+            .border(4.0, BLACK)
+            .background(BLUE)
+            .on_click(move || println!("Clicked: {}", index))
     }
 }
