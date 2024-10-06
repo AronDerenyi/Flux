@@ -10,7 +10,7 @@ use super::View;
 use crate::utils::id_vec::{Id, IdVec};
 use change::Change;
 use itertools::Itertools;
-use node::Node;
+pub use node::Node;
 use std::{
     any::Any,
     collections::HashMap,
@@ -19,7 +19,7 @@ use std::{
 };
 
 pub struct Tree {
-    pub root: Id,
+    root: Id,
     nodes: IdVec<Node>,
 }
 
@@ -78,6 +78,38 @@ impl Tree {
         self.calculate_graphics(change_root);
         self.debug_print(self.root, "".into());
         self.reset(change_root);
+    }
+
+    pub fn traverse_down<F: FnMut(&Node) -> bool>(&self, mut visitor: F) {
+        self.traverse_down_from(self.root, &mut visitor);
+    }
+
+    fn traverse_down_from<F: FnMut(&Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
+        let node = &self[id];
+        if !visitor(node) {
+            for child_id in node.children.clone() {
+                if self.traverse_down_from(child_id, visitor) {
+                    return true;
+                }
+            }
+            false
+        } else {
+            true
+        }
+    }
+
+    pub fn traverse_up<F: FnMut(&Node) -> bool>(&self, mut visitor: F) {
+        self.traverse_down_from(self.root, &mut visitor);
+    }
+
+    fn traverse_up_from<F: FnMut(&Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
+        let node = &self[id];
+        for child_id in node.children.clone() {
+            if self.traverse_down_from(child_id, visitor) {
+                return true;
+            }
+        }
+        visitor(node)
     }
 }
 
