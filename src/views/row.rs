@@ -33,11 +33,11 @@ impl Row {
 }
 
 impl View for Row {
-    fn get_children(&self, _ctx: &mut Context) -> Box<[Rc<dyn View>]> {
+    fn build(&self, _ctx: &mut Context) -> Vec<Rc<dyn View>> {
         self.content.build()
     }
 
-    fn get_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
+    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
         let mut constraints = Constraints {
             size: Vec2::default(),
         };
@@ -51,11 +51,7 @@ impl View for Row {
         constraints
     }
 
-    fn get_children_layouts(
-        &self,
-        layout: Layout,
-        child_constraints: &[Constraints],
-    ) -> Box<[Layout]> {
+    fn calculate_layouts(&self, layout: Layout, child_constraints: &[Constraints]) -> Vec<Layout> {
         let mut x = layout.position.x;
         let y = layout.position.y;
         let mut layouts = Vec::new();
@@ -67,6 +63,6 @@ impl View for Row {
             layouts.push(layout);
             x += child_constraint.size.x + self.spacing;
         }
-        layouts.into()
+        layouts
     }
 }

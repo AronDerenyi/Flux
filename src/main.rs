@@ -12,19 +12,6 @@ use views::{column, row, spacer, Backgroundable, Borderable, Clickable, Componen
 async fn main() {
     let mut app = App::new(Main.border(4.0, BLACK).padding_all(16.0));
     app.update(Id(0));
-    // app.calculate_constraints(2);
-    // app.print();
-
-    let mut test = Some(String::from(""));
-    let a = test.take();
-
-    // let debug_spacer = Spacer::new(Vec2::new(10.0, 10.0))
-    //     .padding_all(10.0)
-    //     .padding_all(10.0)
-    //     .padding_all(10.0);
-    // println!("spacer: {}", size_of_val(&debug_spacer));
-    // println!("ContentBuilder: {}", size_of::<ContentBuilder>());
-    // println!("Column: {}", size_of::<Column>());
 
     loop {
         clear_background(WHITE);
@@ -34,7 +21,6 @@ async fn main() {
         if is_mouse_button_pressed(MouseButton::Left) {
             app.interact(mouse_position().into());
             app.update(Id(2));
-            // app.print();
         }
 
         next_frame().await;
@@ -69,7 +55,7 @@ impl Component for Main {
                 let state = state.clone();
                 move || {
                     state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
-                    state.borrow_mut().items[0].y += 10.0;
+                    // state.borrow_mut().items[0].y += 10.0;
                 }
             }),
             row(ContentBuilder::from_items(

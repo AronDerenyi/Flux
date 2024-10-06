@@ -21,21 +21,16 @@ pub trait Backgroundable: View + Sized {
 impl<V: View + Sized> Backgroundable for V {}
 
 impl View for Background {
-    fn get_children(&self, _ctx: &mut Context) -> Box<[Rc<dyn View>]> {
-        let view = self.view.build();
-        Box::new([view])
+    fn build(&self, _ctx: &mut Context) -> Vec<Rc<dyn View>> {
+        vec![self.view.build()]
     }
 
-    fn get_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
+    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
         child_constraints[0]
     }
 
-    fn get_children_layouts(
-        &self,
-        layout: Layout,
-        _child_constraints: &[Constraints],
-    ) -> Box<[Layout]> {
-        [layout].into()
+    fn calculate_layouts(&self, layout: Layout, _child_constraints: &[Constraints]) -> Vec<Layout> {
+        vec![layout]
     }
 
     fn draw(&self, layout: Layout) -> Box<[Shape]> {

@@ -1,4 +1,4 @@
-use super::{view_node::Shape, Context};
+use super::{Context, Shape};
 use core::hash::Hash;
 use macroquad::math::Vec2;
 use std::{
@@ -8,17 +8,13 @@ use std::{
 
 #[allow(unused, private_bounds)]
 pub trait View: 'static + ViewEq {
-    fn get_children(&self, ctx: &mut Context) -> Box<[Rc<dyn View>]> {
+    fn build(&self, ctx: &mut Context) -> Vec<Rc<dyn View>> {
         Default::default()
     }
 
-    fn get_constraints(&self, child_constraints: &[Constraints]) -> Constraints;
+    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints;
 
-    fn get_children_layouts(
-        &self,
-        layout: Layout,
-        child_constraints: &[Constraints],
-    ) -> Box<[Layout]> {
+    fn calculate_layouts(&self, layout: Layout, child_constraints: &[Constraints]) -> Vec<Layout> {
         Default::default()
     }
 
@@ -114,7 +110,7 @@ impl ViewBuilder {
 
 #[derive(Clone)]
 pub struct ContentBuilder {
-    builder: Rc<dyn Fn() -> Box<[Rc<dyn View>]>>,
+    builder: Rc<dyn Fn() -> Vec<Rc<dyn View>>>,
 }
 
 impl PartialEq for ContentBuilder {
@@ -124,17 +120,17 @@ impl PartialEq for ContentBuilder {
 }
 
 impl ContentBuilder {
-    pub fn new<F: Fn() -> Box<[Rc<dyn View>]> + 'static>(builder: F) -> Self {
+    pub fn new<F: Fn() -> Vec<Rc<dyn View>> + 'static>(builder: F) -> Self {
         Self {
             builder: Rc::new(builder),
         }
     }
 
     pub fn from_slice<const N: usize>(views: [Rc<dyn View>; N]) -> Self {
-        Self::new(move || Box::new(views.clone()))
+        Self::new(move || views.clone().into())
     }
 
-    pub fn from_boxed_slice(views: Box<[Rc<dyn View>]>) -> Self {
+    pub fn from_vec(views: Vec<Rc<dyn View>>) -> Self {
         Self::new(move || views.clone())
     }
 
@@ -142,14 +138,14 @@ impl ContentBuilder {
         items: I,
         builder: F,
     ) -> Self {
-        Self::from_boxed_slice(
+        Self::from_vec(
             items
                 .map::<Rc<dyn View>, _>(|item| Rc::new(builder(item)))
                 .collect(),
         )
     }
 
-    pub fn build(&self) -> Box<[Rc<dyn View>]> {
+    pub fn build(&self) -> Vec<Rc<dyn View>> {
         (self.builder)()
     }
 }

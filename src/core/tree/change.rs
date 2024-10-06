@@ -1,40 +1,9 @@
-use super::{Constraints, Layout};
-use crate::{utils::id_vec::Id, View};
-use itertools::Itertools;
-use macroquad::{color::Color, math::Vec2};
 use std::{
-    any::Any,
-    cell::{Cell, RefCell},
     fmt::Debug,
     ops::{BitAnd, BitOr, BitXor},
-    rc::Rc,
-    u8,
 };
 
-pub struct ViewNode {
-    pub parent: Option<Id>,
-    pub children: Box<[Id]>,
-    pub change: Change,
-
-    pub view: Rc<dyn View>,
-    pub constraints: Constraints,
-    pub layout: Layout,
-    pub graphics: Box<[Shape]>,
-}
-
-impl ViewNode {
-    pub fn new(parent: Option<Id>, view: Rc<dyn View>) -> Self {
-        ViewNode {
-            parent,
-            children: Default::default(),
-            change: Change::ALL,
-            view,
-            constraints: Default::default(),
-            layout: Default::default(),
-            graphics: Default::default(),
-        }
-    }
-}
+use itertools::Itertools;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Change(u8);
@@ -107,13 +76,4 @@ impl Debug for Change {
         f.write_str(&changes)?;
         f.write_str("]")
     }
-}
-
-pub enum Shape {
-    Rect {
-        position: Vec2,
-        size: Vec2,
-        fill: Option<Color>,
-        stroke: Option<(f32, Color)>,
-    },
 }

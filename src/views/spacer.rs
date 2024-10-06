@@ -11,7 +11,7 @@ pub fn spacer(size: Vec2) -> Spacer {
 }
 
 impl View for Spacer {
-    fn get_constraints(&self, _child_constraints: &[Constraints]) -> Constraints {
+    fn calculate_constraints(&self, _child_constraints: &[Constraints]) -> Constraints {
         Constraints { size: self.size }
     }
 }
