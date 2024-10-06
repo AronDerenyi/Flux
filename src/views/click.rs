@@ -1,9 +1,8 @@
-use std::rc::Rc;
-
 use crate::{
     core::{Constraints, Context, Layout, ViewBuilder},
     View,
 };
+use std::rc::Rc;
 
 pub struct Click<A: Fn()> {
     action: A,

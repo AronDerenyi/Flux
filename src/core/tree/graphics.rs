@@ -1,4 +1,7 @@
-use crate::utils::id_vec::Id;
+use crate::{
+    core::{graphics::Graphics, Painter},
+    utils::id_vec::Id,
+};
 
 use super::{change::Change, Tree};
 
@@ -10,7 +13,9 @@ impl Tree {
         }
 
         if node.change.contains(Change::VIEW | Change::LAYOUT) {
-            node.graphics = node.view.draw(node.layout);
+            let mut painter = Painter::new();
+            node.view.draw(node.layout, &mut painter);
+            node.graphics = Graphics::from_painter(painter);
         }
 
         for child_id in node.children.clone() {

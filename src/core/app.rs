@@ -1,4 +1,4 @@
-use super::{tree::Tree, Shape};
+use super::tree::Tree;
 use crate::{utils::id_vec::Id, View};
 use macroquad::{
     math::Vec2,
@@ -25,25 +25,7 @@ impl App {
 
     pub fn draw(&self) {
         self.tree.traverse_down(|_, node| {
-            for shape in node.graphics.iter() {
-                match shape {
-                    Shape::Rect {
-                        position,
-                        size,
-                        fill,
-                        stroke,
-                    } => {
-                        if let Some(color) = fill {
-                            draw_rectangle(position.x, position.y, size.x, size.y, *color)
-                        }
-                        if let Some((width, color)) = stroke {
-                            draw_rectangle_lines(
-                                position.x, position.y, size.x, size.y, *width, *color,
-                            )
-                        }
-                    }
-                }
-            }
+            node.graphics.draw();
             false
         });
     }

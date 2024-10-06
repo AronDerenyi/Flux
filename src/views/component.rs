@@ -1,6 +1,5 @@
-use std::rc::Rc;
-
 use crate::core::{Constraints, Context, Layout, View};
+use std::rc::Rc;
 
 pub trait Component: 'static + PartialEq {
     fn build(&self, ctx: &mut Context) -> impl View;

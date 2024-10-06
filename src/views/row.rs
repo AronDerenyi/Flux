@@ -1,10 +1,9 @@
-use std::rc::Rc;
-
 use crate::{
     core::{Constraints, ContentBuilder, Context, Layout},
     View,
 };
 use macroquad::math::Vec2;
+use std::rc::Rc;
 
 #[derive(PartialEq)]
 pub struct Row {

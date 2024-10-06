@@ -1,7 +1,6 @@
-use std::rc::Rc;
-
-use crate::core::{Constraints, Context, Layout, Shape, View, ViewBuilder};
+use crate::core::{Constraints, Context, Layout, Painter, View, ViewBuilder};
 use macroquad::color::Color;
+use std::rc::Rc;
 
 #[derive(PartialEq)]
 pub struct Background {
@@ -33,12 +32,7 @@ impl View for Background {
         vec![layout]
     }
 
-    fn draw(&self, layout: Layout) -> Box<[Shape]> {
-        Box::new([Shape::Rect {
-            position: layout.position,
-            size: layout.size,
-            fill: Some(self.color),
-            stroke: None,
-        }])
+    fn draw(&self, layout: Layout, painter: &mut Painter) {
+        painter.rect_filled(layout.position, layout.size, self.color);
     }
 }

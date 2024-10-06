@@ -1,6 +1,6 @@
 use super::change::Change;
 use crate::{
-    core::{Constraints, Layout, Shape, View},
+    core::{graphics::Graphics, Constraints, Layout, View},
     utils::id_vec::Id,
 };
 use std::rc::Rc;
@@ -13,7 +13,7 @@ pub struct Node {
     pub view: Rc<dyn View>,
     pub constraints: Constraints,
     pub layout: Layout,
-    pub graphics: Box<[Shape]>,
+    pub graphics: Graphics,
 }
 
 impl Node {

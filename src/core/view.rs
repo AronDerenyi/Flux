@@ -1,4 +1,4 @@
-use super::{Context, Shape};
+use super::{Context, Painter};
 use macroquad::math::Vec2;
 use std::{any::Any, rc::Rc};
 
@@ -14,9 +14,7 @@ pub trait View: 'static + ViewEq {
         Default::default()
     }
 
-    fn draw(&self, layout: Layout) -> Box<[Shape]> {
-        Default::default()
-    }
+    fn draw(&self, layout: Layout, painter: &mut Painter) {}
 
     fn interact(&self) -> bool {
         false

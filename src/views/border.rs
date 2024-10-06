@@ -1,7 +1,6 @@
-use std::rc::Rc;
-
-use crate::core::{Constraints, Context, Layout, Shape, View, ViewBuilder};
+use crate::core::{Constraints, Context, Layout, Painter, View, ViewBuilder};
 use macroquad::color::Color;
+use std::rc::Rc;
 
 #[derive(PartialEq)]
 pub struct Border {
@@ -35,12 +34,7 @@ impl View for Border {
         vec![layout]
     }
 
-    fn draw(&self, layout: Layout) -> Box<[Shape]> {
-        Box::new([Shape::Rect {
-            position: layout.position,
-            size: layout.size,
-            fill: None,
-            stroke: Some((self.width, self.color)),
-        }])
+    fn draw(&self, layout: Layout, painter: &mut Painter) {
+        painter.rect_stroke(layout.position, layout.size, self.width, self.color);
     }
 }
