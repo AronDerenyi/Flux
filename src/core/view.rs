@@ -1,10 +1,6 @@
 use super::{Context, Shape};
-use core::hash::Hash;
 use macroquad::math::Vec2;
-use std::{
-    any::{type_name, Any},
-    rc::Rc,
-};
+use std::{any::Any, rc::Rc};
 
 #[allow(unused, private_bounds)]
 pub trait View: 'static + ViewEq {

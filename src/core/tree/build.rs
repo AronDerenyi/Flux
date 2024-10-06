@@ -1,4 +1,4 @@
-use super::{change::Change, node::Node, Tree};
+use super::{change::Change, Tree};
 use crate::{
     core::{Context, View},
     utils::id_vec::Id,

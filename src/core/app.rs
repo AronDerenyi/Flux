@@ -1,20 +1,10 @@
-use super::{tree::Tree, Constraints, Context, Layout, Shape};
-use crate::{
-    utils::id_vec::{Id, IdVec},
-    View,
-};
-use itertools::{EitherOrBoth, Itertools};
+use super::{tree::Tree, Shape};
+use crate::{utils::id_vec::Id, View};
 use macroquad::{
-    color::RED,
     math::Vec2,
     shapes::{draw_rectangle, draw_rectangle_lines},
 };
-use std::{
-    any::{type_name_of_val, Any, TypeId},
-    cell::{Ref, RefCell, RefMut},
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::{any::Any, collections::HashMap, rc::Rc};
 
 pub struct App {
     tree: Tree,
@@ -23,11 +13,10 @@ pub struct App {
 
 impl App {
     pub fn new<V: View>(root: V) -> Self {
-        let mut app = App {
+        App {
             tree: Tree::new(root),
             states: HashMap::new(),
-        };
-        app
+        }
     }
 
     pub fn update(&mut self, id: Id) {

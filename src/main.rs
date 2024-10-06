@@ -4,9 +4,8 @@ mod views;
 
 use core::{App, ContentBuilder, Context, View};
 use macroquad::prelude::*;
-use std::any::Any;
 use utils::id_vec::Id;
-use views::{column, row, spacer, Backgroundable, Borderable, Clickable, Component, Paddable};
+use views::{row, spacer, Backgroundable, Borderable, Clickable, Component, Paddable};
 
 #[macroquad::main("RustUI")]
 async fn main() {
@@ -70,7 +69,7 @@ impl Component for Main {
 }
 
 impl Component for Item {
-    fn build(&self, ctx: &mut Context) -> impl View {
+    fn build(&self, _ctx: &mut Context) -> impl View {
         let index = self.index.to_owned();
         spacer(self.size)
             .border(4.0, BLACK)
