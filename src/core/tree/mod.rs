@@ -80,13 +80,13 @@ impl Tree {
         self.reset(change_root);
     }
 
-    pub fn traverse_down<F: FnMut(&Node) -> bool>(&self, mut visitor: F) {
+    pub fn traverse_down<F: FnMut(Id, &Node) -> bool>(&self, mut visitor: F) {
         self.traverse_down_from(self.root, &mut visitor);
     }
 
-    fn traverse_down_from<F: FnMut(&Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
+    fn traverse_down_from<F: FnMut(Id, &Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
         let node = &self[id];
-        if !visitor(node) {
+        if !visitor(id, node) {
             for child_id in node.children.clone() {
                 if self.traverse_down_from(child_id, visitor) {
                     return true;
@@ -98,18 +98,18 @@ impl Tree {
         }
     }
 
-    pub fn traverse_up<F: FnMut(&Node) -> bool>(&self, mut visitor: F) {
+    pub fn traverse_up<F: FnMut(Id, &Node) -> bool>(&self, mut visitor: F) {
         self.traverse_down_from(self.root, &mut visitor);
     }
 
-    fn traverse_up_from<F: FnMut(&Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
+    fn traverse_up_from<F: FnMut(Id, &Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
         let node = &self[id];
         for child_id in node.children.clone() {
             if self.traverse_down_from(child_id, visitor) {
                 return true;
             }
         }
-        visitor(node)
+        visitor(id, node)
     }
 }
 

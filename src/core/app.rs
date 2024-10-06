@@ -24,7 +24,7 @@ impl App {
     }
 
     pub fn draw(&self) {
-        self.tree.traverse_down(|node| {
+        self.tree.traverse_down(|_, node| {
             for shape in node.graphics.iter() {
                 match shape {
                     Shape::Rect {
@@ -49,7 +49,7 @@ impl App {
     }
 
     pub fn interact(&self, point: Vec2) {
-        self.tree.traverse_up(|node| {
+        self.tree.traverse_up(|_, node| {
             if node.layout.contains(point) {
                 node.view.interact()
             } else {
