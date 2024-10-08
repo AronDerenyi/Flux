@@ -26,8 +26,9 @@ pub fn column(content: ContentBuilder) -> Column {
 }
 
 impl Column {
-    pub fn spacing(self, spacing: f32) -> Self {
-        Self { spacing, ..self }
+    pub fn spacing(mut self, spacing: f32) -> Self {
+        self.spacing = spacing;
+        self
     }
 }
 

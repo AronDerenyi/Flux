@@ -1,4 +1,8 @@
-use macroquad::{color::Color, math::Vec2};
+use macroquad::{
+    color::Color,
+    math::Vec2,
+    text::{draw_multiline_text_ex, draw_text, draw_text_ex, TextParams},
+};
 
 pub struct Painter {
     shapes: Vec<Shape>,
@@ -31,6 +35,15 @@ impl Painter {
     pub fn rect_stroke(&mut self, position: Vec2, size: Vec2, width: f32, color: Color) {
         self.rect(position, size, None, Some((width, color)));
     }
+
+    pub fn text(&mut self, text: String, position: Vec2, size: f32, color: Color) {
+        self.shapes.push(Shape::Text {
+            text,
+            position,
+            size,
+            color,
+        });
+    }
 }
 
 #[derive(Default)]
@@ -59,6 +72,12 @@ enum Shape {
         fill: Option<Color>,
         stroke: Option<(f32, Color)>,
     },
+    Text {
+        text: String,
+        position: Vec2,
+        size: f32,
+        color: Color,
+    },
 }
 
 impl Shape {
@@ -80,6 +99,26 @@ impl Shape {
                         position.x, position.y, size.x, size.y, *width, *color,
                     )
                 }
+            }
+            Shape::Text {
+                text,
+                position,
+                size,
+                color,
+            } => {
+                draw_text_ex(
+                    text,
+                    position.x,
+                    position.y,
+                    TextParams {
+                        font: None,
+                        font_size: (*size * 2.0) as u16,
+                        font_scale: 1.0,
+                        font_scale_aspect: 1.0,
+                        rotation: 0.0,
+                        color: *color,
+                    },
+                );
             }
         }
     }

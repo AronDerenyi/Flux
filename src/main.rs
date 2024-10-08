@@ -5,7 +5,7 @@ mod views;
 use core::{App, ContentBuilder, Context, View};
 use macroquad::prelude::*;
 use utils::id_vec::Id;
-use views::{row, spacer, Backgroundable, Borderable, Clickable, Component, Paddable};
+use views::{label, row, spacer, Backgroundable, Borderable, Clickable, Component, Paddable};
 
 #[macroquad::main("RustUI")]
 async fn main() {
@@ -50,6 +50,20 @@ impl Component for Main {
         });
 
         return column![
+            label("Test default")
+                .padding_vertical(0.0)
+                .padding_horizontal(8.0)
+                .border(4.0, BLACK),
+            label("Test 16, blue")
+                .size(16.0)
+                .color(BLUE)
+                .padding_vertical(0.0)
+                .padding_horizontal(8.0)
+                .border(4.0, BLACK),
+            label(format!("Items: {}", state.borrow().items.len()))
+                .padding_vertical(0.0)
+                .padding_horizontal(8.0)
+                .border(4.0, BLACK),
             spacer(Vec2::new(100.0, 100.0)).background(RED).on_click({
                 let state = state.clone();
                 move || {

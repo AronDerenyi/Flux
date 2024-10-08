@@ -2,6 +2,16 @@ use super::{Context, Painter};
 use macroquad::math::Vec2;
 use std::{any::Any, rc::Rc};
 
+/*
+Improved layout calculation:
+
+build (traverse down)
+size hint (traverse up) save(min: Vec2, ideal: Vec2, max: Vec2) dependencies()
+constraints (traverse down) save(min: Vec2, max: Vec2) fn(constraints, child size hints) -> child constraints
+size (traverse up) save(size: Vec2) fn(constraints) -> size
+position (traverse down) save(position: Vec2)
+*/
+
 #[allow(unused, private_bounds)]
 pub trait View: 'static + ViewEq {
     fn build(&self, ctx: &mut Context) -> Vec<Rc<dyn View>> {
