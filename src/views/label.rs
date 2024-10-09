@@ -1,10 +1,9 @@
+use crate::core::{Constraints, Painter, Position, Size, SizeHint, View};
 use macroquad::{
     color::{Color, BLACK},
     math::Vec2,
     text::{draw_multiline_text, measure_text},
 };
-
-use crate::core::{Constraints, Layout, Painter, View};
 
 #[derive(PartialEq)]
 pub struct Label {
@@ -34,17 +33,41 @@ impl Label {
 }
 
 impl View for Label {
-    fn calculate_constraints(&self, _child_constraints: &[Constraints]) -> Constraints {
-        let measurements = measure_text(&self.text, None, (self.size * 2.0) as u16, 1.0);
-        Constraints {
-            size: Vec2::new(measurements.width, self.size * 2.0),
+    fn calculate_size_hint(&self, child_size_hints: &[SizeHint]) -> SizeHint {
+        let width = measure_text(&self.text, None, (self.size * 2.0) as u16, 1.0).width;
+        let height = self.size * 2.0;
+        SizeHint {
+            min_width: width,
+            min_height: height,
+            ideal_width: width,
+            ideal_height: height,
+            max_width: width,
+            max_height: height,
         }
     }
 
-    fn draw(&self, layout: Layout, painter: &mut Painter) {
+    fn calculate_constraints(
+        &self,
+        constraints: Constraints,
+        child_size_hints: &[SizeHint],
+    ) -> Vec<Constraints> {
+        vec![constraints]
+    }
+
+    fn calculate_layout(
+        &self,
+        constraints: Constraints,
+        child_sizes: &[Size],
+    ) -> (Size, Vec<Position>) {
+        let width = measure_text(&self.text, None, (self.size * 2.0) as u16, 1.0).width;
+        let height = self.size * 2.0;
+        (Size { width, height }, Vec::new())
+    }
+
+    fn draw(&self, size: Size, painter: &mut Painter) {
         painter.text(
             self.text.clone(),
-            (layout.position.x, layout.position.y + self.size * 1.5).into(),
+            (0.0, self.size * 1.5).into(),
             self.size,
             self.color,
         );

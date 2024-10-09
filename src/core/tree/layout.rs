@@ -1,46 +1,42 @@
-use super::{change::Change, Tree};
-use crate::{core::Layout, utils::id_vec::Id};
 use itertools::Itertools;
-use macroquad::math::Vec2;
+
+use crate::utils::id_vec::Id;
+
+use super::{change::Change, Tree};
 
 impl Tree {
     pub fn calculate_layouts(&mut self, id: Id) {
-        let node = &self[id];
-        if !node
-            .change
-            .contains(Change::VIEW | Change::CHILD_CONSTRAINTS | Change::LAYOUT)
-        {
+        let node = &self.nodes[id];
+        if !node.change.contains(Change::VIEW | Change::CONSTRAINTS) {
             return;
         }
 
+        let mut child_size_changed = false;
         let child_ids = node.children.clone();
-        let child_constraints = child_ids
+        let child_sizes = child_ids
             .iter()
-            .map(|child_id| self[*child_id].constraints)
+            .map(|child_id| {
+                self.calculate_layouts(*child_id);
+                let child_node = &self[*child_id];
+                child_size_changed |= child_node.change.contains(Change::SIZE);
+                child_node.size
+            })
             .collect_vec();
 
-        let child_layouts = node.view.calculate_layouts(node.layout, &child_constraints);
-
-        for (child_id, child_layout) in child_ids.iter().zip(child_layouts) {
-            let child_node = &mut self[*child_id];
-            if child_layout != child_node.layout {
-                child_node.layout = child_layout;
-                child_node.change.add(Change::LAYOUT);
-            }
-            self.calculate_layouts(*child_id);
+        let node = &mut self[id];
+        if child_size_changed {
+            node.change.add(Change::CHILD_SIZE);
         }
-    }
 
-    pub fn calculate_root_layout(&mut self) {
-        let root_id = self.root;
-        let node = &mut self[root_id];
-        let layout = Layout {
-            position: Vec2::ZERO,
-            size: node.constraints.size,
-        };
-        if layout != node.layout {
-            node.layout = layout;
-            node.change.add(Change::LAYOUT);
+        let (size, child_positions) = node.view.calculate_layout(node.constraints, &child_sizes);
+        if size != node.size {
+            node.size = size;
+            node.change.add(Change::SIZE);
+        }
+
+        for (child_id, child_position) in child_ids.iter().zip(child_positions) {
+            let child_node = &mut self[*child_id];
+            child_node.position = child_position;
         }
     }
 }

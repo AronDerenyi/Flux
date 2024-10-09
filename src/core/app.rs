@@ -24,15 +24,19 @@ impl App {
     }
 
     pub fn draw(&self) {
-        self.tree.traverse_down(|_, node| {
-            node.graphics.draw();
+        self.tree.traverse_down(|origin, _, node| {
+            node.graphics.draw(Vec2::new(origin.x, origin.y));
             false
         });
     }
 
     pub fn interact(&self, point: Vec2) {
-        self.tree.traverse_up(|_, node| {
-            if node.layout.contains(point) {
+        self.tree.traverse_up(|origin, _, node| {
+            if origin.x < point.x
+                && origin.y < point.y
+                && origin.x + node.size.width > point.x
+                && origin.y + node.size.height > point.y
+            {
                 node.view.interact()
             } else {
                 false

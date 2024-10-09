@@ -10,10 +10,12 @@ pub struct Change(u8);
 
 impl Change {
     pub const NONE: Self = Self(0);
-    pub const VIEW: Self = Self(0b0001);
-    pub const CONSTRAINTS: Self = Self(0b0010);
-    pub const CHILD_CONSTRAINTS: Self = Self(0b0100);
-    pub const LAYOUT: Self = Self(0b1000);
+    pub const VIEW: Self = Self(0b000001);
+    pub const SIZE_HINT: Self = Self(0b000010);
+    pub const CHILD_SIZE_HINT: Self = Self(0b000100);
+    pub const CONSTRAINTS: Self = Self(0b001000);
+    pub const SIZE: Self = Self(0b010000);
+    pub const CHILD_SIZE: Self = Self(0b100000);
     pub const ALL: Self = Self(u8::MAX);
 
     pub fn add(&mut self, change: Self) {
@@ -57,17 +59,21 @@ impl Debug for Change {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let changes = [
             Self::VIEW,
+            Self::SIZE_HINT,
+            Self::CHILD_SIZE_HINT,
             Self::CONSTRAINTS,
-            Self::CHILD_CONSTRAINTS,
-            Self::LAYOUT,
+            Self::SIZE,
+            Self::CHILD_SIZE,
         ]
         .into_iter()
         .filter(|change| self.contains(*change))
         .map::<String, _>(|change| match change {
             Self::VIEW => "view".into(),
+            Self::SIZE_HINT => "size_hint".into(),
+            Self::CHILD_SIZE_HINT => "child_size_hint".into(),
             Self::CONSTRAINTS => "constraints".into(),
-            Self::CHILD_CONSTRAINTS => "child constraints".into(),
-            Self::LAYOUT => "layout".into(),
+            Self::SIZE => "size".into(),
+            Self::CHILD_SIZE => "child_size".into(),
             _ => "unknown".into(),
         })
         .join(", ");

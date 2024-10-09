@@ -1,5 +1,5 @@
 use crate::{
-    core::{Constraints, Context, Layout, ViewBuilder},
+    core::{Constraints, Context, Position, Size, SizeHint, ViewBuilder},
     View,
 };
 use macroquad::math::Vec2;
@@ -66,17 +66,50 @@ impl View for Padding {
         vec![self.view.build()]
     }
 
-    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
-        Constraints {
-            size: child_constraints[0].size
-                + Vec2::new(self.start + self.end, self.top + self.bottom),
+    fn calculate_size_hint(&self, child_size_hints: &[SizeHint]) -> SizeHint {
+        let horizontal_padding = self.start + self.end;
+        let vertical_padding = self.top + self.bottom;
+        SizeHint {
+            min_width: child_size_hints[0].min_width + horizontal_padding,
+            min_height: child_size_hints[0].min_height + vertical_padding,
+            ideal_width: child_size_hints[0].ideal_width + horizontal_padding,
+            ideal_height: child_size_hints[0].ideal_height + vertical_padding,
+            max_width: child_size_hints[0].max_width + horizontal_padding,
+            max_height: child_size_hints[0].max_height + vertical_padding,
         }
     }
 
-    fn calculate_layouts(&self, layout: Layout, _child_constraints: &[Constraints]) -> Vec<Layout> {
-        vec![Layout {
-            position: layout.position + Vec2::new(self.start, self.top),
-            size: layout.size - Vec2::new(self.start + self.end, self.top + self.bottom),
+    fn calculate_constraints(
+        &self,
+        constraints: Constraints,
+        child_size_hints: &[SizeHint],
+    ) -> Vec<Constraints> {
+        let horizontal_padding = self.start + self.end;
+        let vertical_padding = self.top + self.bottom;
+        vec![Constraints {
+            min_width: constraints.min_width - horizontal_padding,
+            min_height: constraints.min_height - vertical_padding,
+            max_width: constraints.max_width - horizontal_padding,
+            max_height: constraints.max_height - vertical_padding,
         }]
+    }
+
+    fn calculate_layout(
+        &self,
+        constraints: Constraints,
+        child_sizes: &[Size],
+    ) -> (Size, Vec<Position>) {
+        let horizontal_padding = self.start + self.end;
+        let vertical_padding = self.top + self.bottom;
+        (
+            Size {
+                width: child_sizes[0].width + horizontal_padding,
+                height: child_sizes[0].height + vertical_padding,
+            },
+            vec![Position {
+                x: self.start,
+                y: self.top,
+            }],
+        )
     }
 }

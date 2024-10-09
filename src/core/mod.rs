@@ -2,6 +2,7 @@
 mod app;
 mod context;
 mod graphics;
+mod layout;
 mod state;
 mod tree;
 mod view;
@@ -9,5 +10,6 @@ mod view;
 pub use app::App;
 pub use context::Context;
 pub use graphics::{Graphics, Painter};
+pub use layout::{Constraints, Position, Size, SizeHint};
 pub use state::State;
-pub use view::{Constraints, ContentBuilder, Layout, View, ViewBuilder};
+pub use view::{ContentBuilder, View, ViewBuilder};

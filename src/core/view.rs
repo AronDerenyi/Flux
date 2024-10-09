@@ -1,4 +1,4 @@
-use super::{Context, Painter};
+use super::{Constraints, Context, Painter, Position, Size, SizeHint};
 use macroquad::math::Vec2;
 use std::{any::Any, rc::Rc};
 
@@ -6,10 +6,10 @@ use std::{any::Any, rc::Rc};
 Improved layout calculation:
 
 build (traverse down)
-size hint (traverse up) save(min: Vec2, ideal: Vec2, max: Vec2) dependencies()
+size hint (traverse up) save(min: Vec2, ideal: Vec2, max: Vec2) fn(child size hints) -> size hint
 constraints (traverse down) save(min: Vec2, max: Vec2) fn(constraints, child size hints) -> child constraints
-size (traverse up) save(size: Vec2) fn(constraints) -> size
-position (traverse down) save(position: Vec2)
+size (traverse up) save(size: Vec2) fn(constraints, child sizes) -> size
+position (traverse down) save(position: Vec2) fn(position, child sizes) -> child positions
 */
 
 #[allow(unused, private_bounds)]
@@ -18,13 +18,23 @@ pub trait View: 'static + ViewEq {
         Default::default()
     }
 
-    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints;
+    fn calculate_size_hint(&self, child_size_hints: &[SizeHint]) -> SizeHint;
 
-    fn calculate_layouts(&self, layout: Layout, child_constraints: &[Constraints]) -> Vec<Layout> {
+    fn calculate_constraints(
+        &self,
+        constraints: Constraints,
+        child_size_hints: &[SizeHint],
+    ) -> Vec<Constraints> {
         Default::default()
     }
 
-    fn draw(&self, layout: Layout, painter: &mut Painter) {}
+    fn calculate_layout(
+        &self,
+        constraints: Constraints,
+        child_sizes: &[Size],
+    ) -> (Size, Vec<Position>);
+
+    fn draw(&self, size: Size, painter: &mut Painter) {}
 
     fn interact(&self) -> bool {
         false
@@ -62,26 +72,6 @@ impl<T: 'static + PartialEq> ViewEq for T {
 impl PartialEq for dyn View {
     fn eq(&self, other: &Self) -> bool {
         ViewEq::changed(self, ViewEq::as_any(other))
-    }
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub struct Constraints {
-    pub size: Vec2,
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub struct Layout {
-    pub position: Vec2,
-    pub size: Vec2,
-}
-
-impl Layout {
-    pub fn contains(&self, point: Vec2) -> bool {
-        point.x >= self.position.x
-            && point.y >= self.position.y
-            && point.x < self.position.x + self.size.x
-            && point.y < self.position.y + self.size.y
     }
 }
 

@@ -12,9 +12,9 @@ impl Tree {
             return;
         }
 
-        if node.change.contains(Change::VIEW | Change::LAYOUT) {
+        if node.change.contains(Change::VIEW | Change::SIZE) {
             let mut painter = Painter::new();
-            node.view.draw(node.layout, &mut painter);
+            node.view.draw(node.size, &mut painter);
             node.graphics = Graphics::from_painter(painter);
         }
 

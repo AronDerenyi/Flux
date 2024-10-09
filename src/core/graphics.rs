@@ -58,9 +58,9 @@ impl Graphics {
         }
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, origin: Vec2) {
         for shape in self.shapes.iter() {
-            shape.draw();
+            shape.draw(origin);
         }
     }
 }
@@ -81,7 +81,7 @@ enum Shape {
 }
 
 impl Shape {
-    fn draw(&self) {
+    fn draw(&self, origin: Vec2) {
         match self {
             Shape::Rect {
                 position,
@@ -91,12 +91,21 @@ impl Shape {
             } => {
                 if let Some(color) = fill {
                     macroquad::shapes::draw_rectangle(
-                        position.x, position.y, size.x, size.y, *color,
+                        origin.x + position.x,
+                        origin.y + position.y,
+                        size.x,
+                        size.y,
+                        *color,
                     )
                 }
                 if let Some((width, color)) = stroke {
                     macroquad::shapes::draw_rectangle_lines(
-                        position.x, position.y, size.x, size.y, *width, *color,
+                        origin.x + position.x,
+                        origin.y + position.y,
+                        size.x,
+                        size.y,
+                        *width,
+                        *color,
                     )
                 }
             }
@@ -108,8 +117,8 @@ impl Shape {
             } => {
                 draw_text_ex(
                     text,
-                    position.x,
-                    position.y,
+                    origin.x + position.x,
+                    origin.y + position.y,
                     TextParams {
                         font: None,
                         font_size: (*size * 2.0) as u16,

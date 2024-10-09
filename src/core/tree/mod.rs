@@ -5,8 +5,9 @@ mod debug;
 mod graphics;
 mod layout;
 mod node;
+mod size_hints;
 
-use super::View;
+use super::{Position, View};
 use crate::utils::id_vec::{Id, IdVec};
 use change::Change;
 use itertools::Itertools;
@@ -34,30 +35,30 @@ impl Tree {
         self.nodes[id].change.add(Change::VIEW);
 
         self.build(states, id);
-        self.calculate_constraints(id);
+        self.calculate_size_hints(id);
 
         // TODO: Extract to a separate function
-        let constraints_changed = self.nodes[id].change.contains(Change::CONSTRAINTS);
-        let change_root = if constraints_changed {
+        let size_hint_changed = self.nodes[id].change.contains(Change::SIZE_HINT);
+        let change_root = if size_hint_changed {
             let mut change_root = self.nodes[id].parent;
 
             loop {
                 let Some(id) = change_root else { break };
 
                 let node = &self.nodes[id];
-                let constraints = node.view.calculate_constraints(
+                let size_hint = node.view.calculate_size_hint(
                     &node
                         .children
                         .iter()
-                        .map(|i| self.nodes[*i].constraints)
+                        .map(|i| self.nodes[*i].size_hint)
                         .collect_vec(),
                 );
 
                 let node = &mut self.nodes[id];
-                node.change.add(Change::CHILD_CONSTRAINTS);
-                if constraints != node.constraints {
-                    node.constraints = constraints;
-                    node.change.add(Change::CONSTRAINTS);
+                node.change.add(Change::CHILD_SIZE_HINT);
+                if size_hint != node.size_hint {
+                    node.size_hint = size_hint;
+                    node.change.add(Change::SIZE_HINT);
                     change_root = node.parent;
                 } else {
                     break;
@@ -67,28 +68,82 @@ impl Tree {
             if let Some(id) = change_root {
                 id
             } else {
-                self.calculate_root_layout();
+                self.calculate_root_constraints();
                 self.root
             }
         } else {
             id
         };
 
+        self.calculate_constraints(change_root);
         self.calculate_layouts(change_root);
+
+        // TODO: Extract to a separate function
+        let size_changed = self.nodes[change_root].change.contains(Change::SIZE);
+        let change_root = if size_changed {
+            let mut change_root = self.nodes[change_root].parent;
+
+            loop {
+                let Some(id) = change_root else { break };
+
+                let node = &self.nodes[id];
+                let child_ids = node.children.clone();
+                let (size, child_positions) = node.view.calculate_layout(
+                    node.constraints,
+                    &child_ids.iter().map(|i| self.nodes[*i].size).collect_vec(),
+                );
+
+                for (child_id, child_position) in child_ids.iter().zip(child_positions) {
+                    let child_node = &mut self[*child_id];
+                    child_node.position = child_position;
+                }
+
+                let node = &mut self.nodes[id];
+                node.change.add(Change::CHILD_SIZE);
+                if size != node.size {
+                    node.size = size;
+                    node.change.add(Change::SIZE);
+                    change_root = node.parent;
+                } else {
+                    break;
+                }
+            }
+
+            if let Some(id) = change_root {
+                id
+            } else {
+                let id = self.root;
+                let root_node = &mut self[id];
+                root_node.position = Position::default();
+                self.root
+            }
+        } else {
+            change_root
+        };
+
         self.calculate_graphics(change_root);
         self.debug_print(self.root, "".into());
         self.reset(change_root);
     }
 
-    pub fn traverse_down<F: FnMut(Id, &Node) -> bool>(&self, mut visitor: F) {
-        self.traverse_down_from(self.root, &mut visitor);
+    pub fn traverse_down<F: FnMut(Position, Id, &Node) -> bool>(&self, mut visitor: F) {
+        self.traverse_down_from(Position { x: 0.0, y: 0.0 }, self.root, &mut visitor);
     }
 
-    fn traverse_down_from<F: FnMut(Id, &Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
+    fn traverse_down_from<F: FnMut(Position, Id, &Node) -> bool>(
+        &self,
+        origin: Position,
+        id: Id,
+        visitor: &mut F,
+    ) -> bool {
         let node = &self[id];
-        if !visitor(id, node) {
+        let origin = Position {
+            x: origin.x + node.position.x,
+            y: origin.y + node.position.y,
+        };
+        if !visitor(origin, id, node) {
             for child_id in node.children.clone() {
-                if self.traverse_down_from(child_id, visitor) {
+                if self.traverse_down_from(origin, child_id, visitor) {
                     return true;
                 }
             }
@@ -98,18 +153,27 @@ impl Tree {
         }
     }
 
-    pub fn traverse_up<F: FnMut(Id, &Node) -> bool>(&self, mut visitor: F) {
-        self.traverse_down_from(self.root, &mut visitor);
+    pub fn traverse_up<F: FnMut(Position, Id, &Node) -> bool>(&self, mut visitor: F) {
+        self.traverse_down_from(Position { x: 0.0, y: 0.0 }, self.root, &mut visitor);
     }
 
-    fn traverse_up_from<F: FnMut(Id, &Node) -> bool>(&self, id: Id, visitor: &mut F) -> bool {
+    fn traverse_up_from<F: FnMut(Position, Id, &Node) -> bool>(
+        &self,
+        origin: Position,
+        id: Id,
+        visitor: &mut F,
+    ) -> bool {
         let node = &self[id];
+        let origin = Position {
+            x: origin.x + node.position.x,
+            y: origin.y + node.position.y,
+        };
         for child_id in node.children.clone() {
-            if self.traverse_down_from(child_id, visitor) {
+            if self.traverse_up_from(origin, child_id, visitor) {
                 return true;
             }
         }
-        visitor(id, node)
+        visitor(origin, id, node)
     }
 }
 

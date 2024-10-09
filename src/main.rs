@@ -64,13 +64,17 @@ impl Component for Main {
                 .padding_vertical(0.0)
                 .padding_horizontal(8.0)
                 .border(4.0, BLACK),
-            spacer(Vec2::new(100.0, 100.0)).background(RED).on_click({
-                let state = state.clone();
-                move || {
-                    state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
-                    // state.borrow_mut().items[0].y += 10.0;
-                }
-            }),
+            spacer()
+                .width(100.0)
+                .height(100.0)
+                .background(RED)
+                .on_click({
+                    let state = state.clone();
+                    move || {
+                        state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
+                        // state.borrow_mut().items[0].y += 10.0;
+                    }
+                }),
             row(ContentBuilder::from_items(
                 state.borrow().items.iter().enumerate(),
                 |(index, item)| { Item { index, size: *item } }
@@ -85,7 +89,9 @@ impl Component for Main {
 impl Component for Item {
     fn build(&self, _ctx: &mut Context) -> impl View {
         let index = self.index.to_owned();
-        spacer(self.size)
+        spacer()
+            .width(self.size.x)
+            .height(self.size.y)
             .border(4.0, BLACK)
             .background(BLUE)
             .on_click(move || println!("Clicked: {}", index))
