@@ -1,16 +1,9 @@
-use super::{Context, Painter};
+use super::{
+    tree::{ViewLayout, ViewSize, Visitor},
+    Context, Painter,
+};
 use macroquad::math::Vec2;
 use std::{any::Any, rc::Rc};
-
-/*
-Improved layout calculation:
-
-build (traverse down)
-size hint (traverse up) save(min: Vec2, ideal: Vec2, max: Vec2) dependencies()
-constraints (traverse down) save(min: Vec2, max: Vec2) fn(constraints, child size hints) -> child constraints
-size (traverse up) save(size: Vec2) fn(constraints) -> size
-position (traverse down) save(position: Vec2)
-*/
 
 #[allow(unused, private_bounds)]
 pub trait View: 'static + ViewEq {
@@ -18,13 +11,11 @@ pub trait View: 'static + ViewEq {
         Default::default()
     }
 
-    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints;
+    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2;
 
-    fn calculate_layouts(&self, layout: Layout, child_constraints: &[Constraints]) -> Vec<Layout> {
-        Default::default()
-    }
+    fn layout(&self, size: Vec2, children: &[ViewLayout]) {}
 
-    fn draw(&self, layout: Layout, painter: &mut Painter) {}
+    fn draw(&self, size: Vec2, painter: &mut Painter) {}
 
     fn interact(&self) -> bool {
         false
@@ -63,100 +54,4 @@ impl PartialEq for dyn View {
     fn eq(&self, other: &Self) -> bool {
         ViewEq::changed(self, ViewEq::as_any(other))
     }
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub struct Constraints {
-    pub size: Vec2,
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub struct Layout {
-    pub position: Vec2,
-    pub size: Vec2,
-}
-
-impl Layout {
-    pub fn contains(&self, point: Vec2) -> bool {
-        point.x >= self.position.x
-            && point.y >= self.position.y
-            && point.x < self.position.x + self.size.x
-            && point.y < self.position.y + self.size.y
-    }
-}
-
-pub struct ViewBuilder {
-    builder: Rc<dyn Fn() -> Rc<dyn View>>,
-}
-
-impl PartialEq for ViewBuilder {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.builder, &other.builder)
-    }
-}
-
-impl ViewBuilder {
-    pub fn new<F: Fn() -> Rc<dyn View> + 'static>(builder: F) -> Self {
-        Self {
-            builder: Rc::new(builder),
-        }
-    }
-
-    pub fn from_view<V: View>(view: V) -> Self {
-        let reference = Rc::new(view);
-        Self::new(move || reference.clone())
-    }
-
-    pub fn build(&self) -> Rc<dyn View> {
-        (self.builder)()
-    }
-}
-
-#[derive(Clone)]
-pub struct ContentBuilder {
-    builder: Rc<dyn Fn() -> Vec<Rc<dyn View>>>,
-}
-
-impl PartialEq for ContentBuilder {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.builder, &other.builder)
-    }
-}
-
-impl ContentBuilder {
-    pub fn new<F: Fn() -> Vec<Rc<dyn View>> + 'static>(builder: F) -> Self {
-        Self {
-            builder: Rc::new(builder),
-        }
-    }
-
-    pub fn from_slice<const N: usize>(views: [Rc<dyn View>; N]) -> Self {
-        Self::new(move || views.clone().into())
-    }
-
-    pub fn from_vec(views: Vec<Rc<dyn View>>) -> Self {
-        Self::new(move || views.clone())
-    }
-
-    pub fn from_items<T, V: View, I: Iterator<Item = T>, F: Fn(T) -> V + 'static>(
-        items: I,
-        builder: F,
-    ) -> Self {
-        Self::from_vec(
-            items
-                .map::<Rc<dyn View>, _>(|item| Rc::new(builder(item)))
-                .collect(),
-        )
-    }
-
-    pub fn build(&self) -> Vec<Rc<dyn View>> {
-        (self.builder)()
-    }
-}
-
-#[macro_export]
-macro_rules! content {
-    [$($child:expr),+ $(,)?] => (
-        ContentBuilder::from_slice([$(std::rc::Rc::new($child)),+])
-    );
 }

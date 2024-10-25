@@ -1,5 +1,6 @@
+use super::ViewBuilder;
 use crate::{
-    core::{Constraints, Context, Layout, ViewBuilder},
+    core::{Context, ViewLayout, ViewSize},
     View,
 };
 use macroquad::math::Vec2;
@@ -66,17 +67,14 @@ impl View for Padding {
         vec![self.view.build()]
     }
 
-    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
-        Constraints {
-            size: child_constraints[0].size
-                + Vec2::new(self.start + self.end, self.top + self.bottom),
-        }
+    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2 {
+        children[0].size(constraints) + Vec2::new(self.start + self.end, self.top + self.bottom)
     }
 
-    fn calculate_layouts(&self, layout: Layout, _child_constraints: &[Constraints]) -> Vec<Layout> {
-        vec![Layout {
-            position: layout.position + Vec2::new(self.start, self.top),
-            size: layout.size - Vec2::new(self.start + self.end, self.top + self.bottom),
-        }]
+    fn layout(&self, size: Vec2, children: &[ViewLayout]) {
+        children[0].layout(
+            Vec2::new(self.start, self.top),
+            size - Vec2::new(self.start + self.end, self.top + self.bottom),
+        );
     }
 }

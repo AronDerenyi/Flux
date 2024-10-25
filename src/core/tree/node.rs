@@ -1,8 +1,9 @@
 use super::change::Change;
 use crate::{
-    core::{graphics::Graphics, Constraints, Layout, View},
+    core::{graphics::Graphics, View},
     utils::id_vec::Id,
 };
+use macroquad::math::Vec2;
 use std::rc::Rc;
 
 pub struct Node {
@@ -11,8 +12,8 @@ pub struct Node {
     pub change: Change,
 
     pub view: Rc<dyn View>,
-    pub constraints: Constraints,
-    pub layout: Layout,
+    pub position: Vec2,
+    pub size: Vec2,
     pub graphics: Graphics,
 }
 
@@ -23,8 +24,8 @@ impl Node {
             children: Default::default(),
             change: Change::ALL,
             view,
-            constraints: Default::default(),
-            layout: Default::default(),
+            position: Default::default(),
+            size: Default::default(),
             graphics: Default::default(),
         }
     }

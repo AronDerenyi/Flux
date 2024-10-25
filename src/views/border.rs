@@ -1,5 +1,6 @@
-use crate::core::{Constraints, Context, Layout, Painter, View, ViewBuilder};
-use macroquad::color::Color;
+use super::ViewBuilder;
+use crate::core::{Context, Painter, View, ViewLayout, ViewSize};
+use macroquad::{color::Color, math::Vec2};
 use std::rc::Rc;
 
 #[derive(PartialEq)]
@@ -26,15 +27,15 @@ impl View for Border {
         vec![self.view.build()]
     }
 
-    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
-        child_constraints[0]
+    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2 {
+        children[0].size(constraints)
     }
 
-    fn calculate_layouts(&self, layout: Layout, _child_constraints: &[Constraints]) -> Vec<Layout> {
-        vec![layout]
+    fn layout(&self, size: Vec2, children: &[ViewLayout]) {
+        children[0].layout(Vec2::ZERO, size);
     }
 
-    fn draw(&self, layout: Layout, painter: &mut Painter) {
-        painter.rect_stroke(layout.position, layout.size, self.width, self.color);
+    fn draw(&self, size: Vec2, painter: &mut Painter) {
+        painter.rect_stroke(Vec2::ZERO, size, self.width, self.color);
     }
 }

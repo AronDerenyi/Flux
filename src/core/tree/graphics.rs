@@ -6,15 +6,15 @@ use crate::{
 use super::{change::Change, Tree};
 
 impl Tree {
-    pub fn calculate_graphics(&mut self, id: Id) {
-        let node = &mut self.nodes[id];
-        if !node.change.contains(Change::ALL) {
-            return;
-        }
+    pub fn calculate_graphics(&self, id: Id) {
+        let mut node = self.nodes[id].borrow_mut();
+        // if !node.change.contains(Change::ALL) {
+        //     return;
+        // }
 
-        if node.change.contains(Change::VIEW | Change::LAYOUT) {
+        if node.change.contains(Change::VIEW | Change::SIZE) {
             let mut painter = Painter::new();
-            node.view.draw(node.layout, &mut painter);
+            node.view.draw(node.size, &mut painter);
             node.graphics = Graphics::from_painter(painter);
         }
 

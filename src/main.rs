@@ -2,10 +2,12 @@ mod core;
 mod utils;
 mod views;
 
-use core::{App, ContentBuilder, Context, View};
+use core::{App, Context, View};
 use macroquad::prelude::*;
 use utils::id_vec::Id;
-use views::{label, row, spacer, Backgroundable, Borderable, Clickable, Component, Paddable};
+use views::{
+    label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder, Paddable,
+};
 
 #[macroquad::main("RustUI")]
 async fn main() {
@@ -14,7 +16,6 @@ async fn main() {
 
     loop {
         clear_background(WHITE);
-
         app.draw();
 
         if is_mouse_button_pressed(MouseButton::Left) {

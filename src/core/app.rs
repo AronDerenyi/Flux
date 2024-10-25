@@ -24,19 +24,35 @@ impl App {
     }
 
     pub fn draw(&self) {
-        self.tree.traverse_down(|_, node| {
-            node.graphics.draw();
-            false
+        self.tree.traverse(Vec2::ZERO, &|node, origin, children| {
+            let origin = origin + node.position;
+            node.graphics.draw(origin);
+            for child in children {
+                child.visit(origin);
+            }
         });
     }
 
     pub fn interact(&self, point: Vec2) {
-        self.tree.traverse_up(|_, node| {
-            if node.layout.contains(point) {
-                node.view.interact()
-            } else {
-                false
-            }
-        });
+        self.tree
+            .traverse(Vec2::ZERO, &move |node, origin, children| {
+                let origin = origin + node.position;
+                for child in children {
+                    if child.visit(origin) {
+                        return true;
+                    }
+                }
+
+                let relative = point - origin;
+                if relative.x > 0.0
+                    && relative.y > 0.0
+                    && relative.x < node.size.x
+                    && relative.y < node.size.y
+                {
+                    node.view.interact()
+                } else {
+                    false
+                }
+            });
     }
 }

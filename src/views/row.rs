@@ -1,5 +1,6 @@
+use super::ContentBuilder;
 use crate::{
-    core::{Constraints, ContentBuilder, Context, Layout},
+    core::{Context, ViewLayout, ViewSize},
     View,
 };
 use macroquad::math::Vec2;
@@ -14,7 +15,7 @@ pub struct Row {
 #[macro_export]
 macro_rules! row {
     [$($content:tt)+] => {
-        views::row(content![$($content)+])
+        $crate::views::row(content![$($content)+])
     };
 }
 
@@ -37,32 +38,22 @@ impl View for Row {
         self.content.build()
     }
 
-    fn calculate_constraints(&self, child_constraints: &[Constraints]) -> Constraints {
-        let mut constraints = Constraints {
-            size: Vec2::default(),
-        };
-        for child_constraint in child_constraints {
-            constraints.size = Vec2::new(
-                constraints.size.x + child_constraint.size.x,
-                constraints.size.y.max(child_constraint.size.y),
-            );
+    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2 {
+        let mut size = Vec2::ZERO;
+        for child in children {
+            let child_size = child.size(Vec2::ZERO);
+            size = Vec2::new(size.x + child_size.x, size.y.max(child_size.y));
         }
-        constraints.size.x += self.spacing * (child_constraints.len() as f32 - 1.0).max(0.0);
-        constraints
+        size.x += self.spacing * (children.len() as f32 - 1.0).max(0.0);
+        size
     }
 
-    fn calculate_layouts(&self, layout: Layout, child_constraints: &[Constraints]) -> Vec<Layout> {
-        let mut x = layout.position.x;
-        let y = layout.position.y;
-        let mut layouts = Vec::new();
-        for child_constraint in child_constraints.iter() {
-            let layout = Layout {
-                position: Vec2::new(x, y),
-                size: child_constraint.size,
-            };
-            layouts.push(layout);
-            x += child_constraint.size.x + self.spacing;
+    fn layout(&self, size: Vec2, children: &[ViewLayout]) {
+        let mut x = 0.0;
+        for child in children.iter() {
+            let size = child.size(Vec2::ZERO);
+            child.layout(Vec2::new(x, 0.0), size);
+            x += size.x + self.spacing;
         }
-        layouts
     }
 }

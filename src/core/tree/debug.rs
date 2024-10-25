@@ -3,13 +3,14 @@ use crate::utils::id_vec::Id;
 
 impl Tree {
     pub fn debug_print(&self, id: Id, indent: String) {
-        let node = &self.nodes[id];
+        let node = self.nodes[id].borrow();
 
         println!(
-            "{}({:?}): {}, {:?}",
+            "{}({:?}): {}, {:?}, {:?}",
             node.view.debug_name(),
             id,
             size_of_val(&*node.view),
+            node.size,
             node.change,
         );
         for (index, child_index) in node.children.iter().enumerate() {
