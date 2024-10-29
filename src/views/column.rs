@@ -1,6 +1,6 @@
 use super::ContentBuilder;
 use crate::{
-    core::{Context, ViewLayout, ViewSize},
+    core::{Constraint, Constraints, Context, ViewLayout, ViewSize},
     View,
 };
 use macroquad::math::Vec2;
@@ -38,10 +38,13 @@ impl View for Column {
         self.content.build()
     }
 
-    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2 {
         let mut size = Vec2::ZERO;
         for child in children {
-            let child_size = child.size(Vec2::ZERO);
+            let child_size = child.size(Constraints {
+                width: Constraint::Ideal,
+                height: Constraint::Ideal,
+            });
             size = Vec2::new(size.x.max(child_size.x), size.y + child_size.y);
         }
         size.y += self.spacing * (children.len() as f32 - 1.0).max(0.0);
@@ -51,7 +54,10 @@ impl View for Column {
     fn layout(&self, size: Vec2, children: &[ViewLayout]) {
         let mut y = 0.0;
         for child in children.iter() {
-            let child_size = child.size(Vec2::ZERO);
+            let child_size = child.size(Constraints {
+                width: Constraint::Ideal,
+                height: Constraint::Ideal,
+            });
             child.layout(Vec2::new(0.0, y), child_size);
             y += child_size.y + self.spacing;
         }

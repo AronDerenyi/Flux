@@ -10,7 +10,7 @@ impl Tree {
     pub fn build(&mut self, states: &mut HashMap<Id, Rc<dyn Any>>, id: Id) {
         let (paired_children, unused_children) = {
             let node = self[id].borrow();
-            if !node.change.contains(Change::VIEW) {
+            if !node.change.contains(Change::BUILD) {
                 return;
             }
 
@@ -32,10 +32,14 @@ impl Tree {
 
                     // underlying struct is immutable (if no interior mutability is used)
                     // so if the references match the structs match too
-                    if !Rc::ptr_eq(&child_node.view, &child_view) && *child_node.view != *child_view
-                    {
-                        child_node.view = child_view;
-                        child_node.change.add(Change::VIEW);
+                    if !Rc::ptr_eq(&child_node.view, &child_view) {
+                        if *child_node.view != *child_view {
+                            child_node.view = child_view;
+                            child_node.change.add(Change::BUILD);
+                            child_node.change.add(Change::SIZE);
+                            child_node.change.add(Change::LAYOUT);
+                            child_node.change.add(Change::DRAW);
+                        }
                     }
                     child_id
                 } else {

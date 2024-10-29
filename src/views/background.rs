@@ -1,5 +1,5 @@
 use super::ViewBuilder;
-use crate::core::{Context, Painter, View, ViewLayout, ViewSize};
+use crate::core::{Constraints, Context, Painter, View, ViewLayout, ViewSize};
 use macroquad::{color::Color, math::Vec2};
 use std::rc::Rc;
 
@@ -25,7 +25,7 @@ impl View for Background {
         vec![self.view.build()]
     }
 
-    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2 {
         children[0].size(constraints)
     }
 

@@ -10,9 +10,10 @@ pub struct Change(u8);
 
 impl Change {
     pub const NONE: Self = Self(0);
-    pub const VIEW: Self = Self(0b0001);
-    pub const STATE: Self = Self(0b0010);
-    pub const SIZE: Self = Self(0b0100);
+    pub const BUILD: Self = Self(0b0001);
+    pub const SIZE: Self = Self(0b0010);
+    pub const LAYOUT: Self = Self(0b0100);
+    pub const DRAW: Self = Self(0b1000);
     pub const ALL: Self = Self(u8::MAX);
 
     pub fn add(&mut self, change: Self) {
@@ -54,13 +55,14 @@ impl BitXor for Change {
 
 impl Debug for Change {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let changes = [Self::VIEW, Self::STATE, Self::SIZE]
+        let changes = [Self::BUILD, Self::SIZE, Self::LAYOUT, Self::DRAW]
             .into_iter()
             .filter(|change| self.contains(*change))
             .map::<String, _>(|change| match change {
-                Self::VIEW => "view".into(),
-                Self::STATE => "state".into(),
+                Self::BUILD => "build".into(),
                 Self::SIZE => "size".into(),
+                Self::LAYOUT => "layout".into(),
+                Self::DRAW => "draw".into(),
                 _ => "unknown".into(),
             })
             .join(", ");

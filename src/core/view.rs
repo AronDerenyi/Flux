@@ -1,6 +1,6 @@
 use super::{
     tree::{ViewLayout, ViewSize, Visitor},
-    Context, Painter,
+    Constraints, Context, Painter,
 };
 use macroquad::math::Vec2;
 use std::{any::Any, rc::Rc};
@@ -11,7 +11,7 @@ pub trait View: 'static + ViewEq {
         Default::default()
     }
 
-    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2;
+    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2;
 
     fn layout(&self, size: Vec2, children: &[ViewLayout]) {}
 

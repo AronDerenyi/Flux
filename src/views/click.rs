@@ -1,6 +1,6 @@
 use super::ViewBuilder;
 use crate::{
-    core::{Context, ViewLayout, ViewSize},
+    core::{Constraints, Context, ViewLayout, ViewSize},
     View,
 };
 use macroquad::math::Vec2;
@@ -33,7 +33,7 @@ impl<A: Fn() + 'static> View for Click<A> {
         vec![self.view.build()]
     }
 
-    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2 {
         children[0].size(constraints)
     }
 

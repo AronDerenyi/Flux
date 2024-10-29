@@ -1,4 +1,4 @@
-use crate::core::{Context, View, ViewLayout, ViewSize};
+use crate::core::{Constraints, Context, View, ViewLayout, ViewSize};
 use macroquad::math::Vec2;
 use std::rc::Rc;
 
@@ -11,7 +11,7 @@ impl<V: Component> View for V {
         vec![Rc::new(self.build(ctx))]
     }
 
-    fn size(&self, constraints: Vec2, children: &[ViewSize]) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2 {
         children[0].size(constraints)
     }
 

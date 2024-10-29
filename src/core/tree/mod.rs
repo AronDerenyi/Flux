@@ -4,11 +4,15 @@ mod debug;
 mod graphics;
 mod node;
 
-use super::View;
+use super::{Constraint, Constraints, View};
 use crate::utils::id_vec::{Id, IdVec};
 use change::Change;
 use itertools::Itertools;
-use macroquad::{math::Vec2, miniquad::window::screen_size};
+use macroquad::{
+    math::Vec2,
+    miniquad::window::screen_size,
+    window::{screen_height, screen_width},
+};
 pub use node::Node;
 use std::{
     any::Any,
@@ -30,20 +34,35 @@ impl Tree {
         Tree { root, nodes }
     }
 
-    pub fn update(&mut self, states: &mut HashMap<Id, Rc<dyn Any>>, id: Id) {
-        self[id].borrow_mut().change.add(Change::VIEW);
+    pub fn update(&mut self, states: &mut HashMap<Id, Rc<dyn Any>>, mut id: Id) {
+        self[id].borrow_mut().change.add(Change::BUILD);
         self.build(states, id);
+
+        // TODO: Only iterate until a node's cached sizes didn't change.
+        // Right now it iterates all the way up to the root.
+        loop {
+            let mut node = self[id].borrow_mut();
+            node.change.add(Change::SIZE | Change::LAYOUT);
+            if let Some(parent) = node.parent {
+                id = parent;
+            } else {
+                break;
+            }
+        }
 
         let layout = ViewLayout {
             tree: self,
             id: self.root,
         };
-        let size = layout.size(screen_size().into());
+        let size = layout.size(Constraints {
+            width: Constraint::Fixed(screen_width()),
+            height: Constraint::Fixed(screen_height()),
+        });
         layout.layout(Vec2::ZERO, size);
 
-        self.calculate_graphics(self.root);
+        self.calculate_graphics(id);
         self.debug_print(self.root, "".into());
-        self.reset(self.root);
+        self.reset(id);
     }
 }
 
@@ -133,9 +152,16 @@ pub struct ViewSize<'a> {
 }
 
 impl ViewSize<'_> {
-    pub fn size(&self, constraints: Vec2) -> Vec2 {
-        let node = self.tree.nodes[self.id].borrow();
-        node.view.size(
+    pub fn size(&self, constraints: Constraints) -> Vec2 {
+        let mut node = self.tree.nodes[self.id].borrow_mut();
+
+        if !node.change.contains(Change::SIZE) {
+            if let Some(size) = node.cache.get(&constraints) {
+                return *size;
+            }
+        }
+
+        let size = node.view.size(
             constraints,
             &node
                 .children
@@ -145,7 +171,9 @@ impl ViewSize<'_> {
                     id: *id,
                 })
                 .collect::<Box<_>>(),
-        )
+        );
+        node.cache.insert(constraints, size);
+        size
     }
 }
 
@@ -155,7 +183,7 @@ pub struct ViewLayout<'a> {
 }
 
 impl ViewLayout<'_> {
-    pub fn size(&self, constraints: Vec2) -> Vec2 {
+    pub fn size(&self, constraints: Constraints) -> Vec2 {
         ViewSize {
             tree: self.tree,
             id: self.id,
@@ -169,21 +197,21 @@ impl ViewLayout<'_> {
 
         if node.size != size {
             node.size = size;
-            node.change.add(Change::SIZE);
+            node.change.add(Change::LAYOUT | Change::DRAW);
         }
 
-        // if node.change.contains(Change::VIEW | Change::SIZE) {
-        node.view.layout(
-            size,
-            &node
-                .children
-                .iter()
-                .map(|id| ViewLayout {
-                    tree: self.tree,
-                    id: *id,
-                })
-                .collect::<Box<_>>(),
-        );
-        // }
+        if node.change.contains(Change::LAYOUT) {
+            node.view.layout(
+                size,
+                &node
+                    .children
+                    .iter()
+                    .map(|id| ViewLayout {
+                        tree: self.tree,
+                        id: *id,
+                    })
+                    .collect::<Box<_>>(),
+            );
+        }
     }
 }
