@@ -67,14 +67,20 @@ impl View for Padding {
         vec![self.view.build()]
     }
 
-    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2 {
-        children[0].size(constraints) + Vec2::new(self.start + self.end, self.top + self.bottom)
+    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2 {
+        if let Some(child) = children.into_iter().next() {
+            child.size(constraints) + Vec2::new(self.start + self.end, self.top + self.bottom)
+        } else {
+            panic!("Padding must have one child view")
+        }
     }
 
-    fn layout(&self, size: Vec2, children: &[ViewLayout]) {
-        children[0].layout(
-            Vec2::new(self.start, self.top),
-            size - Vec2::new(self.start + self.end, self.top + self.bottom),
-        );
+    fn layout(&self, size: Vec2, children: Vec<ViewLayout>) {
+        if let Some(child) = children.into_iter().next() {
+            child.layout(
+                Vec2::new(self.start, self.top),
+                size - Vec2::new(self.start + self.end, self.top + self.bottom),
+            );
+        }
     }
 }

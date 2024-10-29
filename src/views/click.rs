@@ -33,12 +33,18 @@ impl<A: Fn() + 'static> View for Click<A> {
         vec![self.view.build()]
     }
 
-    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2 {
-        children[0].size(constraints)
+    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2 {
+        if let Some(child) = children.into_iter().next() {
+            child.size(constraints)
+        } else {
+            panic!("Click must have one child view")
+        }
     }
 
-    fn layout(&self, size: Vec2, children: &[ViewLayout]) {
-        children[0].layout(Vec2::ZERO, size);
+    fn layout(&self, size: Vec2, children: Vec<ViewLayout>) {
+        if let Some(child) = children.into_iter().next() {
+            child.layout(Vec2::ZERO, size);
+        }
     }
 
     fn interact(&self) -> bool {

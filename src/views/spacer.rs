@@ -1,4 +1,7 @@
-use crate::{core::Constraints, View};
+use crate::{
+    core::{Constraints, ViewSize},
+    View,
+};
 use macroquad::math::Vec2;
 
 #[derive(PartialEq)]
@@ -11,7 +14,7 @@ pub fn spacer(size: Vec2) -> Spacer {
 }
 
 impl View for Spacer {
-    fn size(&self, constraints: Constraints, children: &[crate::core::ViewSize]) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2 {
         self.size
     }
 }

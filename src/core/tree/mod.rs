@@ -163,14 +163,13 @@ impl ViewSize<'_> {
 
         let size = node.view.size(
             constraints,
-            &node
-                .children
+            node.children
                 .iter()
                 .map(|id| ViewSize {
                     tree: self.tree,
                     id: *id,
                 })
-                .collect::<Box<_>>(),
+                .collect(),
         );
         node.cache.insert(constraints, size);
         size
@@ -191,7 +190,8 @@ impl ViewLayout<'_> {
         .size(constraints)
     }
 
-    pub fn layout(&self, position: Vec2, size: Vec2) {
+    // This takes ownership of the visitor so it forces the caller to only use it once.
+    pub fn layout(self, position: Vec2, size: Vec2) {
         let mut node = self.tree.nodes[self.id].borrow_mut();
         node.position = position;
 
@@ -203,14 +203,13 @@ impl ViewLayout<'_> {
         if node.change.contains(Change::LAYOUT) {
             node.view.layout(
                 size,
-                &node
-                    .children
+                node.children
                     .iter()
                     .map(|id| ViewLayout {
                         tree: self.tree,
                         id: *id,
                     })
-                    .collect::<Box<_>>(),
+                    .collect(),
             );
         }
     }

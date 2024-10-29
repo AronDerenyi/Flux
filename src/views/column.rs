@@ -38,22 +38,23 @@ impl View for Column {
         self.content.build()
     }
 
-    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2 {
         let mut size = Vec2::ZERO;
+        size.y = self.spacing * (children.len() as f32 - 1.0).max(0.0);
         for child in children {
             let child_size = child.size(Constraints {
                 width: Constraint::Ideal,
                 height: Constraint::Ideal,
             });
-            size = Vec2::new(size.x.max(child_size.x), size.y + child_size.y);
+            size.x = size.x.max(child_size.x);
+            size.y += child_size.y;
         }
-        size.y += self.spacing * (children.len() as f32 - 1.0).max(0.0);
         size
     }
 
-    fn layout(&self, size: Vec2, children: &[ViewLayout]) {
+    fn layout(&self, size: Vec2, children: Vec<ViewLayout>) {
         let mut y = 0.0;
-        for child in children.iter() {
+        for child in children {
             let child_size = child.size(Constraints {
                 width: Constraint::Ideal,
                 height: Constraint::Ideal,

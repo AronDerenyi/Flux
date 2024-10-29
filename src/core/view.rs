@@ -11,9 +11,9 @@ pub trait View: 'static + ViewEq {
         Default::default()
     }
 
-    fn size(&self, constraints: Constraints, children: &[ViewSize]) -> Vec2;
+    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2;
 
-    fn layout(&self, size: Vec2, children: &[ViewLayout]) {}
+    fn layout(&self, size: Vec2, children: Vec<ViewLayout>) {}
 
     fn draw(&self, size: Vec2, painter: &mut Painter) {}
 
