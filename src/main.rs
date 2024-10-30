@@ -61,10 +61,6 @@ impl Component for Main {
                 .padding_vertical(0.0)
                 .padding_horizontal(8.0)
                 .border(4.0, BLACK),
-            label(format!("Items: {}", state.borrow().items.len()))
-                .padding_vertical(0.0)
-                .padding_horizontal(8.0)
-                .border(4.0, BLACK),
             spacer(Vec2::new(100.0, 100.0)).background(RED).on_click({
                 let state = state.clone();
                 move || {
@@ -76,7 +72,11 @@ impl Component for Main {
                 state.borrow().items.iter().enumerate(),
                 |(index, item)| { Item { index, size: *item } }
             ))
-            .spacing(10.0)
+            .spacing(10.0),
+            label(format!("Items: {}", state.borrow().items.len()))
+                .padding_vertical(0.0)
+                .padding_horizontal(8.0)
+                .border(4.0, BLACK),
         ]
         .spacing(10.0)
         .padding_all(10.0);

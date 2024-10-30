@@ -67,7 +67,7 @@ impl View for Flex {
                 height: Constraint::Ideal,
             });
             size[main_axis] += child_size[main_axis];
-            size[cross_axis] = size.y.max(child_size[cross_axis]);
+            size[cross_axis] = size[cross_axis].max(child_size[cross_axis]);
         }
         size
     }

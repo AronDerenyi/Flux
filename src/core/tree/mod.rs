@@ -62,7 +62,7 @@ impl Tree {
 
         self.calculate_graphics(id);
         self.debug_print(self.root, "".into());
-        self.reset(id);
+        self.clear(id);
     }
 }
 
@@ -81,15 +81,15 @@ impl Tree {
         // TODO: Clean up states and other id bound properties and callbacks
     }
 
-    fn reset(&self, id: Id) {
+    fn clear(&self, id: Id) {
         let mut node = self[id].borrow_mut();
         // if !node.change.contains(Change::ALL) {
         //     return;
         // }
 
-        node.change.clear();
+        node.clear();
         for child_id in node.children.clone() {
-            self.reset(child_id);
+            self.clear(child_id);
         }
     }
 }
@@ -155,11 +155,12 @@ impl ViewSize<'_> {
     pub fn size(&self, constraints: Constraints) -> Vec2 {
         let mut node = self.tree.nodes[self.id].borrow_mut();
 
-        if !node.change.contains(Change::SIZE) {
-            if let Some(size) = node.cache.get(&constraints) {
+        if let Some((size, new)) = node.cache.get(&constraints) {
+            if *new || !node.change.contains(Change::SIZE) {
                 return *size;
             }
         }
+        node.cache_misses += 1;
 
         let size = node.view.size(
             constraints,
@@ -171,7 +172,7 @@ impl ViewSize<'_> {
                 })
                 .collect(),
         );
-        node.cache.insert(constraints, size);
+        node.cache.insert(constraints, (size, true));
         size
     }
 }

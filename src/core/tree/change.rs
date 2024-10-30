@@ -59,16 +59,16 @@ impl Debug for Change {
             .into_iter()
             .filter(|change| self.contains(*change))
             .map::<String, _>(|change| match change {
-                Self::BUILD => "build".into(),
-                Self::SIZE => "size".into(),
-                Self::LAYOUT => "layout".into(),
-                Self::DRAW => "draw".into(),
+                Self::BUILD => "B".into(),
+                Self::SIZE => "S".into(),
+                Self::LAYOUT => "L".into(),
+                Self::DRAW => "D".into(),
                 _ => "unknown".into(),
             })
-            .join(", ");
+            .join("");
 
-        f.write_str("[")?;
+        f.write_str("(")?;
         f.write_str(&changes)?;
-        f.write_str("]")
+        f.write_str(")")
     }
 }

@@ -5,14 +5,7 @@ impl Tree {
     pub fn debug_print(&self, id: Id, indent: String) {
         let node = self.nodes[id].borrow();
 
-        println!(
-            "{}({:?}): {}, {:?}, {:?}",
-            node.view.debug_name(),
-            id,
-            size_of_val(&*node.view),
-            node.size,
-            node.change,
-        );
+        println!("{:?}: {:?}", node, id);
         for (index, child_index) in node.children.iter().enumerate() {
             let last = index == node.children.len() - 1;
             print!("{}{} ", indent, if last { "╚" } else { "╠" });
