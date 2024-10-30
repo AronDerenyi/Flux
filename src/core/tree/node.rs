@@ -81,5 +81,6 @@ A cache miss can occur when:
 
 Only if a cache miss occurs, the children's cache is queried.
 In the clear step, we traverse down until we find a node who wasn't invalidated and it's parent hasn't had a cache miss.
+We clear every cache entry that wasn't updated in this update cycle.
 
 */
