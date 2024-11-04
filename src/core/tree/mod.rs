@@ -50,7 +50,7 @@ impl Tree {
             }
         }
 
-        let layout = ViewLayout {
+        let layout = Child {
             tree: self,
             id: self.root,
         };
@@ -83,9 +83,9 @@ impl Tree {
 
     fn clear(&self, id: Id) {
         let mut node = self[id].borrow_mut();
-        // if !node.change.contains(Change::ALL) {
-        //     return;
-        // }
+        if !node.change.contains(Change::ALL) && node.new_cache.is_empty() {
+            return;
+        }
 
         node.clear();
         for child_id in node.children.clone() {
@@ -146,49 +146,18 @@ impl<P, V> Visitor<'_, P, V> {
     }
 }
 
-pub struct ViewSize<'a> {
+pub struct Child<'a> {
     tree: &'a Tree,
     id: Id,
 }
 
-impl ViewSize<'_> {
+impl Child<'_> {
     pub fn size(&self, constraints: Constraints) -> Vec2 {
         let mut node = self.tree.nodes[self.id].borrow_mut();
-
-        if let Some((size, new)) = node.cache.get(&constraints) {
-            if *new || !node.change.contains(Change::SIZE) {
-                return *size;
-            }
-        }
-        node.cache_misses += 1;
-
-        let size = node.view.size(
-            constraints,
-            node.children
-                .iter()
-                .map(|id| ViewSize {
-                    tree: self.tree,
-                    id: *id,
-                })
-                .collect(),
-        );
-        node.cache.insert(constraints, (size, true));
-        size
-    }
-}
-
-pub struct ViewLayout<'a> {
-    tree: &'a Tree,
-    id: Id,
-}
-
-impl ViewLayout<'_> {
-    pub fn size(&self, constraints: Constraints) -> Vec2 {
-        ViewSize {
-            tree: self.tree,
-            id: self.id,
-        }
-        .size(constraints)
+        node.cached_size(constraints).unwrap_or_else(|| {
+            let children = self.children(&node.children);
+            node.calculate_size(constraints, &children)
+        })
     }
 
     // This takes ownership of the visitor so it forces the caller to only use it once.
@@ -202,16 +171,18 @@ impl ViewLayout<'_> {
         }
 
         if node.change.contains(Change::LAYOUT) {
-            node.view.layout(
-                size,
-                node.children
-                    .iter()
-                    .map(|id| ViewLayout {
-                        tree: self.tree,
-                        id: *id,
-                    })
-                    .collect(),
-            );
+            let children = self.children(&node.children);
+            node.view.layout(size, children);
         }
+    }
+
+    fn children(&self, children: &[Id]) -> Vec<Child> {
+        children
+            .iter()
+            .map(|id| Child {
+                tree: self.tree,
+                id: *id,
+            })
+            .collect()
     }
 }

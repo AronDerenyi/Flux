@@ -1,5 +1,5 @@
 use super::{
-    tree::{ViewLayout, ViewSize, Visitor},
+    tree::{Child, Visitor},
     Constraints, Context, Painter,
 };
 use macroquad::math::Vec2;
@@ -11,9 +11,9 @@ pub trait View: 'static + ViewEq {
         Default::default()
     }
 
-    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2;
+    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2;
 
-    fn layout(&self, size: Vec2, children: Vec<ViewLayout>) {}
+    fn layout(&self, size: Vec2, children: Vec<Child>) {}
 
     fn draw(&self, size: Vec2, painter: &mut Painter) {}
 

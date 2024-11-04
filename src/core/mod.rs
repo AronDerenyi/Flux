@@ -12,5 +12,5 @@ pub use constraints::{Constraint, Constraints};
 pub use context::Context;
 pub use graphics::{Graphics, Painter};
 pub use state::State;
-pub use tree::{ViewLayout, ViewSize};
+pub use tree::Child;
 pub use view::View;

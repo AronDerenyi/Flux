@@ -1,22 +1,28 @@
-use super::change::Change;
+use super::{change::Change, Child};
 use crate::{
     core::{graphics::Graphics, Constraints, View},
     utils::id_vec::Id,
 };
 use macroquad::math::Vec2;
-use std::fmt::{Debug, Formatter};
 use std::{collections::HashMap, rc::Rc};
+use std::{
+    fmt::{Debug, Formatter},
+    mem::swap,
+};
 
 pub struct Node {
     pub parent: Option<Id>,
     pub children: Box<[Id]>,
-    pub change: Change,
 
     pub view: Rc<dyn View>,
-    pub cache: HashMap<Constraints, (Vec2, bool) /*(size, whether it's new)*/>, // TODO: cache cleaning (one idea is that any cached size who wasn't queried in the last pass can be thrown out)
     pub position: Vec2,
     pub size: Vec2,
     pub graphics: Graphics,
+
+    pub change: Change,
+    // pub cache: HashMap<Constraints, (Vec2, bool) /*(size, whether it's new)*/>, // TODO: cache cleaning (one idea is that any cached size who wasn't queried in the last pass can be thrown out)
+    pub new_cache: HashMap<Constraints, Vec2>,
+    pub old_cache: HashMap<Constraints, Vec2>,
 
     pub cache_misses: usize,
 }
@@ -26,21 +32,48 @@ impl Node {
         Node {
             parent,
             children: Default::default(),
-            change: Change::ALL,
             view,
-            cache: Default::default(),
             position: Default::default(),
             size: Default::default(),
             graphics: Default::default(),
+            change: Change::ALL,
+            new_cache: Default::default(),
+            old_cache: Default::default(),
             cache_misses: 0,
         }
     }
 
+    pub fn invalidate(&mut self, change: Change) {
+        self.change.add(change);
+    }
+
+    pub fn valid(&self, change: Change) -> bool {
+        !self.change.contains(change)
+    }
+
+    pub fn cached_size(&mut self, constraints: Constraints) -> Option<Vec2> {
+        if let Some(&size) = self.new_cache.get(&constraints) {
+            return Some(size);
+        } else if !self.change.contains(Change::SIZE) {
+            if let Some(&size) = self.old_cache.get(&constraints) {
+                self.new_cache.insert(constraints, size);
+                return Some(size);
+            }
+        }
+        self.cache_misses += 1;
+        None
+    }
+
+    pub fn calculate_size(&mut self, constraints: Constraints, children: &Vec<Child>) -> Vec2 {
+        let size = self.view.size(constraints, &children);
+        self.new_cache.insert(constraints, size);
+        size
+    }
+
     pub fn clear(&mut self) {
         self.change.clear();
-        for (_, new) in self.cache.values_mut() {
-            *new = false;
-        }
+        self.old_cache.clear();
+        swap(&mut self.new_cache, &mut self.old_cache);
         self.cache_misses = 0;
     }
 }
@@ -56,8 +89,10 @@ impl Debug for Node {
         self.change.fmt(f)?;
         f.write_str(", ")?;
         self.cache_misses.fmt(f)?;
-        f.write_str(", ")?;
-        self.cache.len().fmt(f)?;
+        f.write_str("/")?;
+        self.new_cache.len().fmt(f)?;
+        f.write_str("/")?;
+        self.old_cache.len().fmt(f)?;
         f.write_str(")")
     }
 }

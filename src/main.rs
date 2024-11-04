@@ -2,21 +2,30 @@ mod core;
 mod utils;
 mod views;
 
+use ::core::f32;
 use core::{App, Context, View};
 use macroquad::prelude::*;
+use miniquad::window::screen_size;
 use utils::id_vec::Id;
 use views::{
-    label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder, Paddable,
+    column, label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder,
+    Paddable,
 };
 
-#[macroquad::main("RustUI")]
+#[macroquad::main("Flux")]
 async fn main() {
     let mut app = App::new(Main.border(4.0, BLACK).padding_all(16.0));
+    let mut prev_screen_size = screen_size();
     app.update(Id(0));
 
     loop {
         clear_background(WHITE);
         app.draw();
+
+        if screen_size() != prev_screen_size {
+            prev_screen_size = screen_size();
+            app.update(Id(0));
+        }
 
         if is_mouse_button_pressed(MouseButton::Left) {
             app.interact(mouse_position().into());
@@ -61,17 +70,39 @@ impl Component for Main {
                 .padding_vertical(0.0)
                 .padding_horizontal(8.0)
                 .border(4.0, BLACK),
-            spacer(Vec2::new(100.0, 100.0)).background(RED).on_click({
+            spacer()
+                .width(100.0)
+                .height(100.0)
+                .background(RED)
+                .on_click({
+                    let state = state.clone();
+                    move || {
+                        state.borrow_mut().items.push(Vec2::new(200.0, 20.0));
+                        // state.borrow_mut().items[0].y += 10.0;
+                    }
+                }),
+            spacer()
+                .height(50.0)
+                .width(20.0)
+                .max_height(100.0)
+                .min_height(20.0)
+                .background(GREEN),
+            spacer()
+                .height(30.0)
+                .width(20.0)
+                .max_height(100.0)
+                .min_height(30.0)
+                .background(GREEN),
+            column(ContentBuilder::from_items(0..10, {
                 let state = state.clone();
-                move || {
-                    state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
-                    // state.borrow_mut().items[0].y += 10.0;
+                move |_| {
+                    row(ContentBuilder::from_items(
+                        state.borrow().items.iter().enumerate(),
+                        |(index, item)| Item { index, size: *item },
+                    ))
+                    .spacing(10.0)
                 }
-            }),
-            row(ContentBuilder::from_items(
-                state.borrow().items.iter().enumerate(),
-                |(index, item)| { Item { index, size: *item } }
-            ))
+            }))
             .spacing(10.0),
             label(format!("Items: {}", state.borrow().items.len()))
                 .padding_vertical(0.0)
@@ -86,9 +117,16 @@ impl Component for Main {
 impl Component for Item {
     fn build(&self, _ctx: &mut Context) -> impl View {
         let index = self.index.to_owned();
-        spacer(self.size)
+        column![spacer()
+            .width(self.size.x)
+            .height(self.size.y)
+            .max_width(if index == 0 {
+                f32::INFINITY
+            } else {
+                self.size.x
+            })
             .border(4.0, BLACK)
             .background(BLUE)
-            .on_click(move || println!("Clicked: {}", index))
+            .on_click(move || println!("Clicked: {}", index))]
     }
 }

@@ -1,5 +1,5 @@
 use super::ViewBuilder;
-use crate::core::{Constraints, Context, Painter, View, ViewLayout, ViewSize};
+use crate::core::{Child, Constraints, Context, Painter, View};
 use macroquad::{color::Color, math::Vec2};
 use std::rc::Rc;
 
@@ -27,7 +27,7 @@ impl View for Border {
         vec![self.view.build()]
     }
 
-    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2 {
         if let Some(child) = children.into_iter().next() {
             child.size(constraints)
         } else {
@@ -35,7 +35,7 @@ impl View for Border {
         }
     }
 
-    fn layout(&self, size: Vec2, children: Vec<ViewLayout>) {
+    fn layout(&self, size: Vec2, children: Vec<Child>) {
         if let Some(child) = children.into_iter().next() {
             child.layout(Vec2::ZERO, size);
         }

@@ -94,3 +94,34 @@ macro_rules! content {
         $crate::views::ContentBuilder::from_slice([$(std::rc::Rc::new($child)),+])
     );
 }
+
+/*
+/// This is an example workaround to make closures implement PartialEq
+/// allowing views like buttons to have callbacks and still implement PartialEq.
+/// Only drawback is that the captured values must be explicitly moved.
+
+#[derive(PartialEq)]
+struct Callback<C, I, O> {
+    captured: C,
+    function: fn(&C, I) -> O,
+}
+
+impl<C, I, O> Callback<C, I, O> {
+    fn call(&self, input: I) -> O {
+        (self.function)(&self.captured, input);
+    }
+}
+
+fn create_print_callback<C: Display>(captured: C) -> Callback<C, (), ()> {
+    Callback {
+        captured,
+        function: |captured, _| println!("Captured: {}", captured),
+    }
+}
+
+fn test() {
+    let foo = create_print_callback(42);
+    let bar = create_print_callback(42);
+    println!("{:?}", foo == bar);
+}
+*/

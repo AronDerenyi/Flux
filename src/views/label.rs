@@ -1,4 +1,4 @@
-use crate::core::{Constraints, Painter, View, ViewSize};
+use crate::core::{Child, Constraints, Painter, View};
 use macroquad::{
     color::{Color, BLACK},
     math::Vec2,
@@ -33,7 +33,7 @@ impl Label {
 }
 
 impl View for Label {
-    fn size(&self, constraints: Constraints, children: Vec<ViewSize>) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2 {
         let measurements = measure_text(&self.text, None, (self.size * 2.0) as u16, 1.0);
         Vec2::new(measurements.width, self.size * 2.0)
     }
