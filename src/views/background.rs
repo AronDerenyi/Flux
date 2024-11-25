@@ -1,5 +1,7 @@
 use super::ViewBuilder;
-use crate::core::{Child, Constraints, Context, Painter, View};
+use crate::core::{
+    Constraints, Context, Interaction, Layout, Painter, View, ViewDrawer, ViewInteractor, ViewSizer,
+};
 use macroquad::{color::Color, math::Vec2};
 use std::rc::Rc;
 
@@ -25,21 +27,30 @@ impl View for Background {
         vec![self.view.build()]
     }
 
-    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2 {
-        if let Some(child) = children.into_iter().next() {
-            child.size(constraints)
-        } else {
-            panic!("Background must have one child view")
-        }
+    fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
+        children[0].size(constraints)
     }
 
-    fn layout(&self, size: Vec2, children: Vec<Child>) {
-        if let Some(child) = children.into_iter().next() {
-            child.layout(Vec2::ZERO, size);
-        }
+    fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout> {
+        vec![Layout {
+            position: Vec2::ZERO,
+            size: layout.size,
+        }]
     }
 
-    fn draw(&self, size: Vec2, painter: &mut Painter) {
-        painter.rect_filled(Vec2::ZERO, size, self.color);
+    fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
+        painter.translate(layout.position, |painter| {
+            painter.rect_filled(Vec2::ZERO, layout.size, self.color);
+            children[0].draw(painter);
+        });
+    }
+
+    fn interact(
+        &self,
+        layout: Layout,
+        interaction: Interaction,
+        children: &[ViewInteractor],
+    ) -> bool {
+        children[0].interact(interaction.translate_into(layout.position))
     }
 }

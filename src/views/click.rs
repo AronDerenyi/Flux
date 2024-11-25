@@ -1,6 +1,8 @@
 use super::ViewBuilder;
 use crate::{
-    core::{Child, Constraints, Context},
+    core::{
+        Constraints, Context, Interaction, Layout, Painter, ViewDrawer, ViewInteractor, ViewSizer,
+    },
     View,
 };
 use macroquad::math::Vec2;
@@ -33,22 +35,41 @@ impl<A: Fn() + 'static> View for Click<A> {
         vec![self.view.build()]
     }
 
-    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2 {
-        if let Some(child) = children.into_iter().next() {
-            child.size(constraints)
+    fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
+        children[0].size(constraints)
+    }
+
+    fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout> {
+        vec![Layout {
+            position: Vec2::ZERO,
+            size: layout.size,
+        }]
+    }
+
+    fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
+        painter.translate(layout.position, |painter| {
+            children[0].draw(painter);
+        });
+    }
+
+    fn interact(
+        &self,
+        layout: Layout,
+        interaction: Interaction,
+        children: &[ViewInteractor],
+    ) -> bool {
+        let Interaction::Click(point) = interaction;
+        if children[0].interact(interaction.translate_into(layout.position)) {
+            true
+        } else if point.x >= layout.position.x
+            && point.y >= layout.position.y
+            && point.x <= layout.position.x + layout.size.x
+            && point.y <= layout.position.y + layout.size.y
+        {
+            (self.action)();
+            true
         } else {
-            panic!("Click must have one child view")
+            false
         }
-    }
-
-    fn layout(&self, size: Vec2, children: Vec<Child>) {
-        if let Some(child) = children.into_iter().next() {
-            child.layout(Vec2::ZERO, size);
-        }
-    }
-
-    fn interact(&self) -> bool {
-        (self.action)();
-        true
     }
 }

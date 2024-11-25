@@ -2,10 +2,15 @@ mod core;
 mod utils;
 mod views;
 
-use ::core::f32;
-use core::{App, Context, View};
+use core::{Context, Interaction, View, ViewTree};
 use macroquad::prelude::*;
 use miniquad::window::screen_size;
+use std::{
+    any::Any,
+    collections::HashMap,
+    rc::Rc,
+    time::{Duration, Instant},
+};
 use utils::id_vec::Id;
 use views::{
     column, label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder,
@@ -14,22 +19,36 @@ use views::{
 
 #[macroquad::main("Flux")]
 async fn main() {
-    let mut app = App::new(Main.border(4.0, BLACK).padding_all(16.0));
+    let mut states = HashMap::<Id, Rc<dyn Any>>::new();
+    let mut tree = ViewTree::new(Main.border(4.0, BLACK).padding_all(16.0));
     let mut prev_screen_size = screen_size();
-    app.update(Id(0));
+    tree.update(&mut states, Id(0));
+
+    let mut updates = 0u32;
+    let mut elapsed: Duration = Duration::ZERO;
 
     loop {
         clear_background(WHITE);
-        app.draw();
+        tree.draw();
 
         if screen_size() != prev_screen_size {
             prev_screen_size = screen_size();
-            app.update(Id(0));
+            let start = Instant::now();
+            tree.update(&mut states, Id(0));
+            let delta = start.elapsed();
+            updates += 1;
+            elapsed += delta;
+            println!("Update: {:?} - {:?}", delta, elapsed.checked_div(updates));
         }
 
         if is_mouse_button_pressed(MouseButton::Left) {
-            app.interact(mouse_position().into());
-            app.update(Id(2));
+            tree.interact(Interaction::Click(mouse_position().into()));
+            let start = Instant::now();
+            tree.update(&mut states, Id(2));
+            let delta = start.elapsed();
+            updates += 1;
+            elapsed += delta;
+            println!("Update: {:?} - {:?}", delta, elapsed.checked_div(updates));
         }
 
         next_frame().await;
@@ -77,7 +96,7 @@ impl Component for Main {
                 .on_click({
                     let state = state.clone();
                     move || {
-                        state.borrow_mut().items.push(Vec2::new(200.0, 20.0));
+                        state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
                         // state.borrow_mut().items[0].y += 10.0;
                     }
                 }),
@@ -120,8 +139,8 @@ impl Component for Item {
         column![spacer()
             .width(self.size.x)
             .height(self.size.y)
-            .max_width(if index == 0 {
-                f32::INFINITY
+            .max_width(if index == 0 || true {
+                50.0 //f32::INFINITY
             } else {
                 self.size.x
             })

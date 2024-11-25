@@ -1,6 +1,9 @@
 use super::ContentBuilder;
 use crate::{
-    core::{Child, Constraint, Constraints, Context},
+    core::{
+        Constraint, Constraints, Context, Interaction, Layout, Painter, ViewDrawer, ViewInteractor,
+        ViewSizer,
+    },
     View,
 };
 use itertools::Itertools;
@@ -56,7 +59,7 @@ impl View for Flex {
         self.content.build()
     }
 
-    fn size(&self, mut constraints: Constraints, children: &Vec<Child>) -> Vec2 {
+    fn size(&self, mut constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
         if let Constraint::Fixed(mut available) = constraints[self.axis] {
             constraints[self.axis] = Constraint::Ideal;
             let mut child_sizes = children
@@ -95,7 +98,8 @@ impl View for Flex {
         }
     }
 
-    fn layout(&self, size: Vec2, children: Vec<Child>) {
+    fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout> {
+        let size = layout.size;
         let mut constraints = Constraints {
             width: Constraint::Fixed(size.x),
             height: Constraint::Fixed(size.y),
@@ -109,7 +113,7 @@ impl View for Flex {
         let ideal_size = self.calculate_size(&child_sizes);
 
         let mut available = size[self.axis] - ideal_size[self.axis];
-        if available != 0.0 {
+        if available != 0.01 {
             if available < 0.0 {
                 constraints[self.axis] = Constraint::Min;
             } else {
@@ -131,10 +135,41 @@ impl View for Flex {
         }
 
         let mut offset = Vec2::ZERO;
-        for (child, child_size) in children.into_iter().zip(child_sizes) {
-            child.layout(offset, child_size);
-            offset[self.axis] += child_size[self.axis] + self.spacing;
+        children
+            .into_iter()
+            .zip(child_sizes)
+            .map(|(child, child_size)| {
+                let child_position = offset;
+                offset[self.axis] += child_size[self.axis] + self.spacing;
+                Layout {
+                    position: child_position,
+                    size: child_size,
+                }
+            })
+            .collect()
+    }
+
+    fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
+        painter.translate(layout.position, |painter| {
+            for child in children {
+                child.draw(painter);
+            }
+        });
+    }
+
+    fn interact(
+        &self,
+        layout: Layout,
+        interaction: Interaction,
+        children: &[ViewInteractor],
+    ) -> bool {
+        let interaction = interaction.translate_into(layout.position);
+        for child in children {
+            if child.interact(interaction) {
+                return true;
+            }
         }
+        false
     }
 }
 

@@ -1,6 +1,6 @@
 use super::{
-    tree::{Child, Visitor},
-    Constraints, Context, Painter,
+    view_tree::{ViewDrawer, ViewInteractor, ViewSizer, ViewTree},
+    Constraints, Context, Interaction, Layout, Painter,
 };
 use macroquad::math::Vec2;
 use std::{any::Any, rc::Rc};
@@ -11,15 +11,18 @@ pub trait View: 'static + ViewEq {
         Default::default()
     }
 
-    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2;
+    fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2;
 
-    fn layout(&self, size: Vec2, children: Vec<Child>) {}
+    fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout>;
 
-    fn draw(&self, size: Vec2, painter: &mut Painter) {}
+    fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]);
 
-    fn interact(&self) -> bool {
-        false
-    }
+    fn interact(
+        &self,
+        layout: Layout,
+        interaction: Interaction,
+        children: &[ViewInteractor],
+    ) -> bool;
 
     fn debug_name(&self) -> &str {
         let mut type_name = std::any::type_name::<Self>();
@@ -35,7 +38,7 @@ pub trait View: 'static + ViewEq {
 
 trait ViewEq {
     fn as_any(&self) -> &dyn Any;
-    fn changed(&self, previous: &dyn Any) -> bool;
+    fn eq(&self, previous: &dyn Any) -> bool;
 }
 
 impl<T: 'static + PartialEq> ViewEq for T {
@@ -43,15 +46,15 @@ impl<T: 'static + PartialEq> ViewEq for T {
         self
     }
 
-    fn changed(&self, previous: &dyn Any) -> bool {
-        previous
+    fn eq(&self, other: &dyn Any) -> bool {
+        other
             .downcast_ref::<T>()
-            .map_or(false, |previous| self.eq(previous))
+            .map_or(false, |other| self.eq(other))
     }
 }
 
 impl PartialEq for dyn View {
     fn eq(&self, other: &Self) -> bool {
-        ViewEq::changed(self, ViewEq::as_any(other))
+        ViewEq::eq(self, ViewEq::as_any(other))
     }
 }

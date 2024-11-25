@@ -1,5 +1,8 @@
 use crate::{
-    core::{Child, Constraint, Constraints},
+    core::{
+        Constraint, Constraints, Interaction, Layout, Painter, ViewDrawer, ViewInteractor,
+        ViewSizer,
+    },
     View,
 };
 use macroquad::math::Vec2;
@@ -78,7 +81,7 @@ impl Spacer {
 }
 
 impl View for Spacer {
-    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
         Vec2::new(
             match constraints.width {
                 Constraint::Ideal => self.ideal.x,
@@ -93,5 +96,20 @@ impl View for Spacer {
                 Constraint::Fixed(height) => height.clamp(self.min.y, self.max.y),
             },
         )
+    }
+
+    fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout> {
+        Vec::new()
+    }
+
+    fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {}
+
+    fn interact(
+        &self,
+        layout: Layout,
+        interaction: Interaction,
+        children: &[ViewInteractor],
+    ) -> bool {
+        false
     }
 }

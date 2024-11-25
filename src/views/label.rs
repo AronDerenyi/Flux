@@ -1,4 +1,6 @@
-use crate::core::{Child, Constraints, Painter, View};
+use crate::core::{
+    Constraints, Interaction, Layout, Painter, View, ViewDrawer, ViewInteractor, ViewSizer,
+};
 use macroquad::{
     color::{Color, BLACK},
     math::Vec2,
@@ -33,17 +35,30 @@ impl Label {
 }
 
 impl View for Label {
-    fn size(&self, constraints: Constraints, children: &Vec<Child>) -> Vec2 {
+    fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
         let measurements = measure_text(&self.text, None, (self.size * 2.0) as u16, 1.0);
         Vec2::new(measurements.width, self.size * 2.0)
     }
 
-    fn draw(&self, size: Vec2, painter: &mut Painter) {
+    fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout> {
+        Vec::new()
+    }
+
+    fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
         painter.text(
-            self.text.clone(),
-            Vec2::new(0.0, 0.0 + self.size * 1.5),
+            &self.text,
+            layout.position + Vec2::new(0.0, 0.0 + self.size * 1.5),
             self.size,
             self.color,
         );
+    }
+
+    fn interact(
+        &self,
+        layout: Layout,
+        interaction: Interaction,
+        children: &[ViewInteractor],
+    ) -> bool {
+        false
     }
 }
