@@ -1,8 +1,8 @@
 use super::ContentBuilder;
 use crate::{
     core::{
-        Constraint, Constraints, Context, Interaction, Layout, Painter, ViewDrawer, ViewInteractor,
-        ViewSizer,
+        Context, Constraint, Constraints, ContextMut, Interaction, Layout, Painter, ViewDrawer,
+        ViewInteractor, ViewSizer,
     },
     View,
 };
@@ -55,7 +55,7 @@ impl Flex {
 }
 
 impl View for Flex {
-    fn build(&self, _ctx: &mut Context) -> Vec<Rc<dyn View>> {
+    fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
         self.content.build()
     }
 
@@ -159,13 +159,14 @@ impl View for Flex {
 
     fn interact(
         &self,
+        context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
         children: &[ViewInteractor],
     ) -> bool {
         let interaction = interaction.translate_into(layout.position);
         for child in children {
-            if child.interact(interaction) {
+            if child.interact(context, interaction) {
                 return true;
             }
         }

@@ -1,4 +1,6 @@
-use super::{Constraint, Constraints, Context, Interaction, Layout, Painter, View};
+use super::{
+    Context, Constraint, Constraints, ContextMut, Interaction, Layout, Painter, States, View,
+};
 use crate::utils::id_vec::{Id, IdVec};
 use itertools::{EitherOrBoth::*, Itertools};
 use macroquad::{
@@ -36,8 +38,8 @@ impl ViewTree {
         ViewTree { root, nodes }
     }
 
-    pub fn update(&mut self, states: &mut HashMap<Id, Rc<dyn Any>>, mut id: Id) {
-        self.build(states, id);
+    pub fn update(&mut self, context: &mut Context, mut id: Id) {
+        self.build(context, id);
 
         let size = ViewSizer {
             tree: self,
@@ -66,18 +68,18 @@ impl ViewTree {
         .draw(&mut painter);
     }
 
-    pub fn interact(&self, interaction: Interaction) -> bool {
+    pub fn interact(&self, context: &mut ContextMut, interaction: Interaction) -> bool {
         ViewInteractor {
             tree: self,
             id: self.root,
         }
-        .interact(interaction)
+        .interact(context, interaction)
     }
 
-    fn build(&mut self, states: &mut HashMap<Id, Rc<dyn Any>>, id: Id) {
+    fn build(&mut self, context: &mut Context, id: Id) {
         let node = self.nodes[id].borrow();
-        let mut context = Context::new(id, states);
-        let children = node.view.build(&mut context);
+
+        let children = context.with_id(id, |context| node.view.build(context));
         let (paired_children, unused_children) =
             self.pair_children(children.into_iter(), node.children.iter().copied());
 
@@ -100,13 +102,13 @@ impl ViewTree {
                         if *child_node.view != *child_view {
                             child_node.view = child_view;
                             drop(child_node);
-                            self.build(states, child_id);
+                            self.build(context, child_id)
                         }
                     }
                     child_id
                 } else {
                     let child_id = self.insert(id, child_view);
-                    self.build(states, child_id);
+                    self.build(context, child_id);
                     child_id
                 }
             })
@@ -230,19 +232,22 @@ pub struct ViewInteractor<'a> {
 }
 
 impl ViewInteractor<'_> {
-    pub fn interact(&self, interaction: Interaction) -> bool {
-        let node = self.tree.nodes[self.id].borrow();
-        node.view.interact(
-            node.layout,
-            interaction,
-            &node
-                .children
-                .iter()
-                .map(|&id| ViewInteractor {
-                    tree: self.tree,
-                    id,
-                })
-                .collect_vec(),
-        )
+    pub fn interact(&self, context: &mut ContextMut, interaction: Interaction) -> bool {
+        context.with_id(self.id, |context| {
+            let node = self.tree.nodes[self.id].borrow();
+            node.view.interact(
+                context,
+                node.layout,
+                interaction,
+                &node
+                    .children
+                    .iter()
+                    .map(|&id| ViewInteractor {
+                        tree: self.tree,
+                        id,
+                    })
+                    .collect_vec(),
+            )
+        })
     }
 }

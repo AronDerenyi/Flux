@@ -1,15 +1,14 @@
 use super::{
+    context::Context,
     view_tree::{ViewDrawer, ViewInteractor, ViewSizer, ViewTree},
-    Constraints, Context, Interaction, Layout, Painter,
+    Constraints, ContextMut, Interaction, Layout, Painter,
 };
 use macroquad::math::Vec2;
 use std::{any::Any, rc::Rc};
 
 #[allow(unused, private_bounds)]
 pub trait View: 'static + ViewEq {
-    fn build(&self, ctx: &mut Context) -> Vec<Rc<dyn View>> {
-        Default::default()
-    }
+    fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>>;
 
     fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2;
 
@@ -19,6 +18,7 @@ pub trait View: 'static + ViewEq {
 
     fn interact(
         &self,
+        context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
         children: &[ViewInteractor],

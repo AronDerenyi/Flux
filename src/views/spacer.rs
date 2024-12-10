@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use crate::{
     core::{
-        Constraint, Constraints, Interaction, Layout, Painter, ViewDrawer, ViewInteractor,
-        ViewSizer,
+        Context, Constraint, Constraints, ContextMut, Interaction, Layout, Painter, ViewDrawer,
+        ViewInteractor, ViewSizer,
     },
     View,
 };
@@ -81,6 +83,10 @@ impl Spacer {
 }
 
 impl View for Spacer {
+    fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
+        Vec::new()
+    }
+
     fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
         Vec2::new(
             match constraints.width {
@@ -106,6 +112,7 @@ impl View for Spacer {
 
     fn interact(
         &self,
+        context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
         children: &[ViewInteractor],

@@ -2,13 +2,11 @@ mod core;
 mod utils;
 mod views;
 
-use core::{Context, Interaction, View, ViewTree};
+use core::{Binding, Context, ContextMut, Interaction, States, View, ViewTree};
 use macroquad::prelude::*;
 use miniquad::window::screen_size;
 use std::{
-    any::Any,
-    collections::HashMap,
-    rc::Rc,
+    collections::HashSet,
     time::{Duration, Instant},
 };
 use utils::id_vec::Id;
@@ -17,12 +15,20 @@ use views::{
     Paddable,
 };
 
-#[macroquad::main("Flux")]
+fn window_conf() -> Conf {
+    Conf {
+        window_title: "Flux".to_owned(),
+        high_dpi: true,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() {
-    let mut states = HashMap::<Id, Rc<dyn Any>>::new();
+    let mut states = States::new();
     let mut tree = ViewTree::new(Main.border(4.0, BLACK).padding_all(16.0));
     let mut prev_screen_size = screen_size();
-    tree.update(&mut states, Id(0));
+    tree.update(&mut Context::new(&mut states), Id(0));
 
     let mut updates = 0u32;
     let mut elapsed: Duration = Duration::ZERO;
@@ -34,17 +40,31 @@ async fn main() {
         if screen_size() != prev_screen_size {
             prev_screen_size = screen_size();
             let start = Instant::now();
-            tree.update(&mut states, Id(0));
+            tree.update(&mut Context::new(&mut states), Id(0));
             let delta = start.elapsed();
             updates += 1;
             elapsed += delta;
-            println!("Update: {:?} - {:?}", delta, elapsed.checked_div(updates));
+            println!("Resize: {:?} - {:?}", delta, elapsed.checked_div(updates));
         }
 
         if is_mouse_button_pressed(MouseButton::Left) {
-            tree.interact(Interaction::Click(mouse_position().into()));
+            tree.interact(&mut ContextMut::new(&mut states), Interaction::Click(mouse_position().into()));
+            println!("{:?}", states.states);
+            // println!("{:?}", states.dependencies);
+            println!("{:?}", states.changes);
+
             let start = Instant::now();
-            tree.update(&mut states, Id(2));
+            let mut update = HashSet::<Id>::new();
+            for i in states.changes.iter() {
+                if let Some(dependents) = states.dependencies.get_dependents(*i) {
+                    update.extend(dependents);
+                }
+            }
+            states.clear_changes();
+
+            for i in update {
+                tree.update(&mut Context::new(&mut states), i);
+            }
             let delta = start.elapsed();
             updates += 1;
             elapsed += delta;
@@ -78,6 +98,11 @@ impl Component for Main {
             ],
         });
 
+        let count = ctx.state(|| 0);
+
+        let length = ctx.get(state).items.len();
+        let a = length + *ctx.get(count);
+
         return column![
             label("Test default")
                 .padding_vertical(0.0)
@@ -93,12 +118,11 @@ impl Component for Main {
                 .width(100.0)
                 .height(100.0)
                 .background(RED)
-                .on_click({
-                    let state = state.clone();
-                    move || {
-                        state.borrow_mut().items.push(Vec2::new(20.0, 20.0));
-                        // state.borrow_mut().items[0].y += 10.0;
-                    }
+                .on_click(move |ctx| {
+                    *ctx.get(count) += 1;
+                    let mut state = ctx.get(state);
+                    state.items.push(Vec2::new(20.0, 20.0));
+                    // state.items[0].y += 10.0;
                 }),
             spacer()
                 .height(50.0)
@@ -112,21 +136,19 @@ impl Component for Main {
                 .max_height(100.0)
                 .min_height(30.0)
                 .background(GREEN),
-            column(ContentBuilder::from_items(0..10, {
-                let state = state.clone();
+            column(ContentBuilder::from_items(0..1, {
+                let items = ctx.get(state).items.clone();
                 move |_| {
                     row(ContentBuilder::from_items(
-                        state.borrow().items.iter().enumerate(),
+                        items.iter().enumerate(),
                         |(index, item)| Item { index, size: *item },
                     ))
                     .spacing(10.0)
                 }
             }))
             .spacing(10.0),
-            label(format!("Items: {}", state.borrow().items.len()))
-                .padding_vertical(0.0)
-                .padding_horizontal(8.0)
-                .border(4.0, BLACK),
+            label(format!("{}", a)),
+            Text(count)
         ]
         .spacing(10.0)
         .padding_all(10.0);
@@ -146,6 +168,20 @@ impl Component for Item {
             })
             .border(4.0, BLACK)
             .background(BLUE)
-            .on_click(move || println!("Clicked: {}", index))]
+            .on_click(move |_| println!("Clicked: {}", index))]
+    }
+}
+
+#[derive(PartialEq)]
+struct Text(Binding<usize>);
+
+impl Component for Text {
+    fn build(&self, ctx: &mut Context) -> impl View {
+        let count = ctx.get(self.0);
+        label(format!("Items: {}", *count))
+            // .color(WHITE)
+            .padding_vertical(0.0)
+            .padding_horizontal(8.0)
+            .border(4.0, BLACK)
     }
 }

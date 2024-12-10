@@ -1,5 +1,8 @@
+use std::rc::Rc;
+
 use crate::core::{
-    Constraints, Interaction, Layout, Painter, View, ViewDrawer, ViewInteractor, ViewSizer,
+    Context, Constraints, ContextMut, Interaction, Layout, Painter, View, ViewDrawer,
+    ViewInteractor, ViewSizer,
 };
 use macroquad::{
     color::{Color, BLACK},
@@ -35,6 +38,10 @@ impl Label {
 }
 
 impl View for Label {
+    fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
+        Vec::new()
+    }
+
     fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
         let measurements = measure_text(&self.text, None, (self.size * 2.0) as u16, 1.0);
         Vec2::new(measurements.width, self.size * 2.0)
@@ -55,6 +62,7 @@ impl View for Label {
 
     fn interact(
         &self,
+        context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
         children: &[ViewInteractor],

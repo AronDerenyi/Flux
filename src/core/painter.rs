@@ -9,9 +9,9 @@ impl Painter {
         Self { origin }
     }
 
-    pub fn translate(&mut self, translation: Vec2, func: impl FnOnce(&mut Painter)) {
+    pub fn translate(&mut self, translation: Vec2, f: impl FnOnce(&mut Painter)) {
         let mut painter = Painter::new(self.origin + translation);
-        (func)(&mut painter);
+        f(&mut painter);
     }
 
     pub fn rect_filled(&mut self, position: Vec2, size: Vec2, color: Color) {

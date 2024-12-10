@@ -1,26 +1,27 @@
 use super::ViewBuilder;
 use crate::{
     core::{
-        Constraints, Context, Interaction, Layout, Painter, ViewDrawer, ViewInteractor, ViewSizer,
+        Context, Constraints, ContextMut, Interaction, Layout, Painter, ViewDrawer,
+        ViewInteractor, ViewSizer,
     },
     View,
 };
 use macroquad::math::Vec2;
 use std::rc::Rc;
 
-pub struct Click<A: Fn()> {
+pub struct Click<A: Fn(&mut ContextMut)> {
     action: A,
     view: ViewBuilder,
 }
 
-impl<A: Fn()> PartialEq for Click<A> {
+impl<A: Fn(&mut ContextMut)> PartialEq for Click<A> {
     fn eq(&self, other: &Self) -> bool {
         false
     }
 }
 
 pub trait Clickable: View + Sized {
-    fn on_click<A: Fn() + 'static>(self, action: A) -> Click<A> {
+    fn on_click<A: Fn(&mut ContextMut) + 'static>(self, action: A) -> Click<A> {
         Click {
             action,
             view: ViewBuilder::from_view(self),
@@ -30,8 +31,8 @@ pub trait Clickable: View + Sized {
 
 impl<V: View + Sized> Clickable for V {}
 
-impl<A: Fn() + 'static> View for Click<A> {
-    fn build(&self, _ctx: &mut Context) -> Vec<Rc<dyn View>> {
+impl<A: Fn(&mut ContextMut) + 'static> View for Click<A> {
+    fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
         vec![self.view.build()]
     }
 
@@ -54,19 +55,20 @@ impl<A: Fn() + 'static> View for Click<A> {
 
     fn interact(
         &self,
+        context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
         children: &[ViewInteractor],
     ) -> bool {
         let Interaction::Click(point) = interaction;
-        if children[0].interact(interaction.translate_into(layout.position)) {
+        if children[0].interact(context, interaction.translate_into(layout.position)) {
             true
         } else if point.x >= layout.position.x
             && point.y >= layout.position.y
             && point.x <= layout.position.x + layout.size.x
             && point.y <= layout.position.y + layout.size.y
         {
-            (self.action)();
+            (self.action)(context);
             true
         } else {
             false

@@ -1,8 +1,8 @@
 use super::ViewBuilder;
 use crate::{
     core::{
-        Constraint, Constraints, Context, Interaction, Layout, Painter, ViewDrawer, ViewInteractor,
-        ViewSizer,
+        Context, Constraint, Constraints, ContextMut, Interaction, Layout, Painter, ViewDrawer,
+        ViewInteractor, ViewSizer,
     },
     View,
 };
@@ -66,7 +66,7 @@ pub trait Paddable: View + Sized {
 impl<V: View + Sized> Paddable for V {}
 
 impl View for Padding {
-    fn build(&self, _ctx: &mut Context) -> Vec<Rc<dyn View>> {
+    fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
         vec![self.view.build()]
     }
 
@@ -95,10 +95,11 @@ impl View for Padding {
 
     fn interact(
         &self,
+        context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
         children: &[ViewInteractor],
     ) -> bool {
-        children[0].interact(interaction.translate_into(layout.position))
+        children[0].interact(context, interaction.translate_into(layout.position))
     }
 }
