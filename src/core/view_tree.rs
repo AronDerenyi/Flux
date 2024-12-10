@@ -1,6 +1,4 @@
-use super::{
-    Context, Constraint, Constraints, ContextMut, Interaction, Layout, Painter, States, View,
-};
+use super::{Constraint, Constraints, Context, ContextMut, Interaction, Layout, Painter, View};
 use crate::utils::id_vec::{Id, IdVec};
 use itertools::{EitherOrBoth::*, Itertools};
 use macroquad::{

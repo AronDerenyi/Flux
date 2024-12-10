@@ -2,14 +2,14 @@ mod core;
 mod utils;
 mod views;
 
-use core::{Binding, Context, ContextMut, Interaction, States, View, ViewTree};
+use core::{Binding, Context, ContextMut, Interaction, View, ViewTree};
 use macroquad::prelude::*;
 use miniquad::window::screen_size;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     time::{Duration, Instant},
 };
-use utils::id_vec::Id;
+use utils::{bigraph::Bigraph, id_vec::Id};
 use views::{
     column, label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder,
     Paddable,
@@ -25,10 +25,16 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut states = States::new();
+    let mut states = HashMap::new();
+    let mut state_dependencies = Bigraph::new();
+    let mut state_changes = HashSet::new();
+
     let mut tree = ViewTree::new(Main.border(4.0, BLACK).padding_all(16.0));
     let mut prev_screen_size = screen_size();
-    tree.update(&mut Context::new(&mut states), Id(0));
+    tree.update(
+        &mut Context::new(&mut states, &mut state_dependencies),
+        Id(0),
+    );
 
     let mut updates = 0u32;
     let mut elapsed: Duration = Duration::ZERO;
@@ -40,7 +46,10 @@ async fn main() {
         if screen_size() != prev_screen_size {
             prev_screen_size = screen_size();
             let start = Instant::now();
-            tree.update(&mut Context::new(&mut states), Id(0));
+            tree.update(
+                &mut Context::new(&mut states, &mut state_dependencies),
+                Id(0),
+            );
             let delta = start.elapsed();
             updates += 1;
             elapsed += delta;
@@ -48,22 +57,25 @@ async fn main() {
         }
 
         if is_mouse_button_pressed(MouseButton::Left) {
-            tree.interact(&mut ContextMut::new(&mut states), Interaction::Click(mouse_position().into()));
-            println!("{:?}", states.states);
+            tree.interact(
+                &mut ContextMut::new(&mut states, &mut state_changes),
+                Interaction::Click(mouse_position().into()),
+            );
+            println!("{:?}", states);
             // println!("{:?}", states.dependencies);
-            println!("{:?}", states.changes);
+            println!("{:?}", state_changes);
 
             let start = Instant::now();
-            let mut update = HashSet::<Id>::new();
-            for i in states.changes.iter() {
-                if let Some(dependents) = states.dependencies.get_dependents(*i) {
-                    update.extend(dependents);
-                }
+            let mut update = HashSet::<Option<Id>>::new();
+            for i in state_changes.iter() {
+                update.extend(state_dependencies.get_v_connections(*i));
             }
-            states.clear_changes();
+            state_changes.clear();
 
             for i in update {
-                tree.update(&mut Context::new(&mut states), i);
+                if let Some(i) = i {
+                    tree.update(&mut Context::new(&mut states, &mut state_dependencies), i);
+                }
             }
             let delta = start.elapsed();
             updates += 1;
@@ -119,8 +131,8 @@ impl Component for Main {
                 .height(100.0)
                 .background(RED)
                 .on_click(move |ctx| {
-                    *ctx.get(count) += 1;
-                    let mut state = ctx.get(state);
+                    *ctx.get_mut(count) += 1;
+                    let state = ctx.get_mut(state);
                     state.items.push(Vec2::new(20.0, 20.0));
                     // state.items[0].y += 10.0;
                 }),
