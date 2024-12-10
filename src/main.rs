@@ -149,7 +149,7 @@ impl Component for Main {
                 .min_height(30.0)
                 .background(GREEN),
             column(ContentBuilder::from_items(0..1, {
-                let items = ctx.get(state).items.clone();
+                let items = &ctx.get(state).items;
                 move |_| {
                     row(ContentBuilder::from_items(
                         items.iter().enumerate(),

@@ -72,7 +72,7 @@ impl ContentBuilder {
         Self::new(move || views.clone())
     }
 
-    pub fn from_items<T, V: View, I: Iterator<Item = T>, F: FnMut(T) -> V + 'static>(
+    pub fn from_items<T, V: View, I: Iterator<Item = T>, F: FnMut(T) -> V>(
         items: I,
         mut builder: F,
     ) -> Self {
