@@ -1,91 +1,196 @@
 mod core;
+mod skia;
 mod utils;
 mod views;
+mod winit;
 
-use core::{Binding, Context, ContextMut, Interaction, View, ViewTree};
-use macroquad::prelude::*;
-use miniquad::window::screen_size;
-use std::{
-    collections::{HashMap, HashSet},
-    time::{Duration, Instant},
+use ::core::f32;
+use ::winit::event_loop::EventLoop;
+use core::{Binding, Context, View};
+use itertools::Itertools;
+use macroquad::{
+    color::{BLACK, BLUE, GREEN, RED},
+    math::Vec2,
 };
-use utils::{bigraph::Bigraph, id_vec::Id};
+use skia::SkiaRenderer;
+use skia_safe::{
+    textlayout::{
+        FontCollection, Paragraph, ParagraphBuilder, ParagraphStyle, TextAlign, TextHeightBehavior,
+        TextStyle,
+    },
+    Canvas, Color, Color4f, ConditionallySend, Font, FontMgr, Paint, Point, Rect, Sendable,
+    TextBlob, Typeface,
+};
 use views::{
     column, label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder,
     Paddable,
 };
+use winit::WinitApp;
+// use winit::{dpi::LogicalUnit, event_loop::EventLoop};
 
-fn window_conf() -> Conf {
-    Conf {
-        window_title: "Flux".to_owned(),
-        high_dpi: true,
-        ..Default::default()
-    }
+fn main() {
+    dbg!(FontMgr::new().family_names().collect_vec());
+
+    let event_loop = EventLoop::new().unwrap();
+    event_loop
+        .run_app(&mut WinitApp::new(
+            |window| SkiaRenderer::new(window),
+            render,
+        ))
+        .unwrap();
 }
 
-#[macroquad::main(window_conf)]
-async fn main() {
-    let mut states = HashMap::new();
-    let mut state_dependencies = Bigraph::new();
-    let mut state_changes = HashSet::new();
-
-    let mut tree = ViewTree::new(Main.border(4.0, BLACK).padding_all(16.0));
-    let mut prev_screen_size = screen_size();
-    tree.update(
-        &mut Context::new(&mut states, &mut state_dependencies),
-        Id(0),
-    );
-
-    let mut updates = 0u32;
-    let mut elapsed: Duration = Duration::ZERO;
-
-    loop {
-        clear_background(WHITE);
-        tree.draw();
-
-        if screen_size() != prev_screen_size {
-            prev_screen_size = screen_size();
-            let start = Instant::now();
-            tree.update(
-                &mut Context::new(&mut states, &mut state_dependencies),
-                Id(0),
-            );
-            let delta = start.elapsed();
-            updates += 1;
-            elapsed += delta;
-            println!("Resize: {:?} - {:?}", delta, elapsed.checked_div(updates));
-        }
-
-        if is_mouse_button_pressed(MouseButton::Left) {
-            tree.interact(
-                &mut ContextMut::new(&mut states, &mut state_changes),
-                Interaction::Click(mouse_position().into()),
-            );
-            println!("{:?}", states);
-            // println!("{:?}", states.dependencies);
-            println!("{:?}", state_changes);
-
-            let start = Instant::now();
-            let mut update = HashSet::<Option<Id>>::new();
-            for i in state_changes.iter() {
-                update.extend(state_dependencies.get_v_connections(*i));
-            }
-            state_changes.clear();
-
-            for i in update {
-                if let Some(i) = i {
-                    tree.update(&mut Context::new(&mut states, &mut state_dependencies), i);
-                }
-            }
-            let delta = start.elapsed();
-            updates += 1;
-            elapsed += delta;
-            println!("Update: {:?} - {:?}", delta, elapsed.checked_div(updates));
-        }
-
-        next_frame().await;
-    }
+thread_local! {
+    static FONT_COLLECTION: FontCollection = {
+        let mut collection = FontCollection::new();
+        collection.set_asset_font_manager(Some(FontMgr::new()));
+        collection
+    };
 }
+
+fn render(canvas: &Canvas) {
+    canvas.clear(Color4f::new(1.0, 1.0, 1.0, 1.0));
+    // canvas.draw_text_blob(
+    //     TextBlob::from_str("Hello\nWorld", &Font::from_typeface(a.clone(), Some(12.0))).unwrap(),
+    //     Point::new(100.0, 100.0),
+    //     &Paint::new(Color4f::new(0.0, 0.0, 0.0, 1.0), None),
+    // );
+    let mut style = TextStyle::new();
+    style.set_font_size(14.0);
+    style.set_color(Color::from_argb(255, 0, 0, 0));
+    style.set_font_families(&["Comic Sans MS"]);
+
+    let mut par_style = ParagraphStyle::new();
+    par_style.set_text_align(TextAlign::Justify);
+    par_style.set_max_lines(4);
+    par_style.set_text_height_behavior(TextHeightBehavior::DisableFirstAscent);
+    par_style.set_ellipsis("...");
+
+    let a = FONT_COLLECTION.with(|collection| collection.clone());
+    let mut paragraph = ParagraphBuilder::new(&par_style, a)
+        .push_style(&style)
+        .add_text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.")
+        .build();
+    paragraph.layout(f32::INFINITY);
+    paragraph.layout(550.0);
+
+    // dbg!(paragraph.longest_line());
+    // dbg!(paragraph.max_width());
+    // dbg!(paragraph.max_intrinsic_width());
+    // dbg!(paragraph.min_intrinsic_width());
+    // paragraph.layout(paragraph.min_intrinsic_width());
+    let w = paragraph.longest_line() * 0.0 + 550.0;
+    let h = paragraph.height();
+    // canvas.draw_rect(
+    //     Rect::from_xywh(50.0, 50.0, w, h),
+    //     &Paint::new(Color4f::new(0.7, 0.7, 0.7, 1.0), None),
+    // );
+    paragraph.paint(canvas, Point::new(50.0, 50.0));
+    // println!("{}", paragraph.height());
+    // canvas.draw_text_blob(
+    //     paragraph,
+    //     Point::new(100.0, 150.0),
+    //     &Paint::new(Color4f::new(1.0, 1.0, 1.0, 1.0), None),
+    // );
+    // canvas.draw_text_blob(
+    //     TextBlob::from_str("Hello\nWorld", &Font::from_typeface(a.clone(), Some(24.0))).unwrap(),
+    //     Point::new(100.0, 210.0),
+    //     &Paint::new(Color4f::new(1.0, 1.0, 1.0, 1.0), None),
+    // );
+
+    // canvas.clear(Color4f::new(0.0, 0.0, 0.0, 1.0));
+    // for _ in 0..1000 {
+    //     canvas.draw_rect(
+    //         Rect::from_xywh(
+    //             rand::random::<f32>() * 1400.0,
+    //             rand::random::<f32>() * 1000.0,
+    //             200.0,
+    //             200.0,
+    //         ),
+    //         &Paint::new(
+    //             Color4f::new(
+    //                 rand::random::<f32>(),
+    //                 rand::random::<f32>(),
+    //                 rand::random::<f32>(),
+    //                 rand::random::<f32>(),
+    //             ),
+    //             None,
+    //         ),
+    //     );
+    // }
+}
+
+// fn window_conf() -> Conf {
+//     Conf {
+//         window_title: "Flux".to_owned(),
+//         high_dpi: true,
+//         ..Default::default()
+//     }
+// }
+
+// #[macroquad::main(window_conf)]
+// async fn main() {
+//     let mut states = HashMap::new();
+//     let mut state_dependencies = Bigraph::new();
+//     let mut state_changes = HashSet::new();
+
+//     let mut tree = ViewTree::new(Main.border(4.0, BLACK).padding_all(16.0));
+//     let mut prev_screen_size = screen_size();
+//     tree.update(
+//         &mut Context::new(&mut states, &mut state_dependencies),
+//         Id(0),
+//     );
+
+//     let mut updates = 0u32;
+//     let mut elapsed: Duration = Duration::ZERO;
+
+//     loop {
+//         clear_background(WHITE);
+//         tree.draw();
+
+//         if screen_size() != prev_screen_size {
+//             prev_screen_size = screen_size();
+//             let start = Instant::now();
+//             tree.update(
+//                 &mut Context::new(&mut states, &mut state_dependencies),
+//                 Id(0),
+//             );
+//             let delta = start.elapsed();
+//             updates += 1;
+//             elapsed += delta;
+//             println!("Resize: {:?} - {:?}", delta, elapsed.checked_div(updates));
+//         }
+
+//         if is_mouse_button_pressed(MouseButton::Left) {
+//             tree.interact(
+//                 &mut ContextMut::new(&mut states, &mut state_changes),
+//                 Interaction::Click(mouse_position().into()),
+//             );
+//             println!("{:?}", states);
+//             // println!("{:?}", states.dependencies);
+//             println!("{:?}", state_changes);
+
+//             let start = Instant::now();
+//             let mut update = HashSet::<Option<Id>>::new();
+//             for i in state_changes.iter() {
+//                 update.extend(state_dependencies.get_v_connections(*i));
+//             }
+//             state_changes.clear();
+
+//             for i in update {
+//                 if let Some(i) = i {
+//                     tree.update(&mut Context::new(&mut states, &mut state_dependencies), i);
+//                 }
+//             }
+//             let delta = start.elapsed();
+//             updates += 1;
+//             elapsed += delta;
+//             println!("Update: {:?} - {:?}", delta, elapsed.checked_div(updates));
+//         }
+
+//         next_frame().await;
+//     }
+// }
 
 #[derive(PartialEq)]
 struct Main;
