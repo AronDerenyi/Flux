@@ -55,6 +55,7 @@ impl From<Paint> for skia_safe::Paint {
                 sk_paint.set_stroke(true);
                 sk_paint.set_color(color);
                 sk_paint.set_stroke_width(width);
+                sk_paint.set_stroke_miter(10.0);
             }
         }
         sk_paint

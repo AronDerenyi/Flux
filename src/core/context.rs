@@ -30,11 +30,11 @@ impl Context<'_> {
     }
 
     pub(super) fn with_id<T>(&mut self, id: Id, f: impl FnOnce(&mut Context) -> T) -> T {
-        self.dependencies.borrow_mut().remove_u(Some(id));
+        self.dependencies.get_mut().remove_u(Some(id));
         f(&mut Context {
             id: Some(id),
             states: self.states,
-            dependencies: RefCell::new(*self.dependencies.borrow_mut()),
+            dependencies: RefCell::new(self.dependencies.get_mut()),
         })
     }
 }

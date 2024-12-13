@@ -4,121 +4,134 @@ use flux_ui::{
     core::{Binding, Context, View},
     graphics::Color,
     math::Vec2,
+    row,
     views::*,
 };
 
 fn main() {
-    App::run(Main);
+    App::run(ContentView);
+}
+
+#[derive(Clone, PartialEq)]
+struct Todo {
+    name: String,
+    done: bool,
+}
+
+struct Todos {
+    items: Vec<Todo>,
 }
 
 #[derive(PartialEq)]
-struct Main;
+struct ContentView;
 
-#[derive(PartialEq)]
-struct Item {
-    index: usize,
-    size: Vec2,
-}
-
-struct MainState {
-    items: Vec<Vec2>,
-}
-
-impl Component for Main {
+impl Component for ContentView {
     fn build(&self, ctx: &mut Context) -> impl View {
-        let state = ctx.state(|| MainState {
+        let selected = ctx.state(|| Option::<usize>::None);
+        let todos = ctx.state(|| Todos {
             items: vec![
-                Vec2::new(20.0, 20.0),
-                // Vec2::new(50.0, 50.0),
-                // Vec2::new(50.0, 50.0),
+                Todo {
+                    name: "First".into(),
+                    done: false,
+                },
+                Todo {
+                    name: "Second".into(),
+                    done: false,
+                },
+                Todo {
+                    name: "Third".into(),
+                    done: false,
+                },
+                Todo {
+                    name: "Fourth".into(),
+                    done: false,
+                },
             ],
         });
 
-        let count = ctx.state(|| 0);
-
-        let length = ctx.get(state).items.len();
-        let a = length + *ctx.get(count);
-
-        return column![
-            label("Test\ndefault")
-                .size(16.0)
-                .padding_vertical(0.0)
-                .padding_horizontal(8.0)
-                .background(0xE0E0E0),
-            label("Test 16, blue")
-                .size(12.0)
-                .color(Color::BLUE)
-                .padding_vertical(0.0)
-                .padding_horizontal(8.0)
-                .border(1.0, Color::BLACK),
-            spacer()
-                .width(100.0)
-                .height(100.0)
-                .background(Color::RED)
-                .on_click(move |ctx| {
-                    *ctx.get_mut(count) += 1;
-                    let state = ctx.get_mut(state);
-                    state.items.push(Vec2::new(20.0, 20.0));
-                    // state.items[0].y += 10.0;
-                }),
-            spacer()
-                .height(50.0)
-                .width(20.0)
-                .max_height(100.0)
-                .min_height(20.0)
-                .background(Color::GREEN),
-            spacer()
-                .height(30.0)
-                .width(20.0)
-                .max_height(100.0)
-                .min_height(30.0)
-                .background(Color::GREEN),
-            column(ContentBuilder::from_items(0..1, {
-                let items = &ctx.get(state).items;
-                move |_| {
-                    row(ContentBuilder::from_items(
-                        items.iter().enumerate(),
-                        |(index, item)| Item { index, size: *item },
-                    ))
-                    .spacing(10.0)
-                }
-            }))
-            .spacing(10.0),
-            label(format!("{}", a)),
-            Text(count)
-        ]
-        .spacing(10.0)
-        .padding_all(10.0);
-    }
-}
-
-impl Component for Item {
-    fn build(&self, _ctx: &mut Context) -> impl View {
-        let index = self.index.to_owned();
-        column![spacer()
-            .width(self.size.x)
-            .height(self.size.y)
-            .max_width(if index == 0 || true {
-                50.0 //f32::INFINITY
-            } else {
-                self.size.x
-            })
-            .border(4.0, Color::BLACK)
-            .background(Color::BLUE)
-            .on_click(move |_| println!("Clicked: {}", index))]
+        ListView { selected, todos }.background(0xE0E0E0)
     }
 }
 
 #[derive(PartialEq)]
-struct Text(Binding<usize>);
+struct ListView {
+    selected: Binding<Option<usize>>,
+    todos: Binding<Todos>,
+}
 
-impl Component for Text {
+impl Component for ListView {
     fn build(&self, ctx: &mut Context) -> impl View {
-        let count = ctx.get(self.0);
-        label(format!("Items: {}", *count))
-            // .color(WHITE)
-            .padding_vertical(0.0)
-            .padding_horizontal(8.0)
-            .border(1.0, Color::BLACK)
+        let selected_binding = self.selected;
+        let todos_binding = self.todos;
+
+        let selected = ctx.get(self.selected);
+        column![
+            column(ContentBuilder::from_items(
+                ctx.get(self.todos).items.iter().enumerate(),
+                |(index, item)| {
+                    ListItemView {
+                        index,
+                        todos: todos_binding,
+                        todo: item.clone(),
+                        selected: selected.map_or(false, |selected| selected == index),
+                    }
+                    .on_click(move |ctx| *ctx.get_mut(selected_binding) = Some(index))
+                },
+            ))
+            .spacing(2.0),
+            spacer(),
+            row![
+                spacer().height(0.0),
+                label("New item").size(16.0),
+                spacer().height(0.0)
+            ]
+            .padding_all(16.0)
+            .background(Color::WHITE)
+            .on_click(move |ctx| {
+                let items = &mut ctx.get_mut(todos_binding).items;
+                items.push(Todo {
+                    name: format!("Item {}", items.len() + 1),
+                    done: false,
+                })
+            })
+        ]
+        .spacing(16.0)
+        .padding_all(16.0)
+    }
+}
+
+#[derive(PartialEq)]
+struct ListItemView {
+    index: usize,
+    todos: Binding<Todos>,
+    todo: Todo,
+    selected: bool,
+}
+
+impl Component for ListItemView {
+    fn build(&self, _ctx: &mut Context) -> impl View {
+        let Self { index, todos, .. } = *self;
+
+        row![
+            label(&self.todo.name).size(16.0),
+            spacer().height(0.0),
+            spacer()
+                .width(20.0)
+                .height(20.0)
+                .background(Color::RED)
+                .on_click(move |ctx| {
+                    ctx.get_mut(todos).items.remove(index);
+                })
+        ]
+        .padding_all(16.0)
+        .border(
+            2.0,
+            if self.selected {
+                0x404040.into()
+            } else {
+                Color::TRANSPARENT
+            },
+        )
+        .background(Color::WHITE)
     }
 }

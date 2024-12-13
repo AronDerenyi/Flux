@@ -17,10 +17,10 @@ pub struct Border {
 }
 
 pub trait Borderable: View + Sized {
-    fn border(self, width: f32, color: Color) -> Border {
+    fn border(self, width: f32, color: impl Into<Color>) -> Border {
         Border {
             width,
-            color,
+            color: color.into(),
             view: ViewBuilder::from_view(self),
         }
     }

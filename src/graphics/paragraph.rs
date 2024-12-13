@@ -58,10 +58,7 @@ impl Paragraph {
         }
 
         Vec2::new(
-            width.clamp(
-                sk_paragraph.min_intrinsic_width().ceil(),
-                sk_paragraph.max_intrinsic_width().ceil(),
-            ),
+            width.min(sk_paragraph.max_intrinsic_width().ceil()),
             sk_paragraph.height(),
         )
     }
