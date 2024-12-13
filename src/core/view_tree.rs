@@ -1,9 +1,9 @@
 use super::{Constraint, Constraints, Context, ContextMut, Interaction, Layout, View};
+use crate::math::Vec2;
 use crate::{
     graphics::Painter,
     utils::id_vec::{Id, IdVec},
 };
-use glam::Vec2;
 use itertools::{EitherOrBoth::*, Itertools};
 use std::{any::Any, cell::RefCell, rc::Rc};
 

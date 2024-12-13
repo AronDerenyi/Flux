@@ -1,4 +1,5 @@
 use super::ViewBuilder;
+use crate::math::Vec2;
 use crate::{
     core::{
         Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer, ViewInteractor,
@@ -6,7 +7,6 @@ use crate::{
     },
     graphics::{Color, Paint, Painter},
 };
-use glam::Vec2;
 use std::rc::Rc;
 
 #[derive(PartialEq)]

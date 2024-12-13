@@ -1,13 +1,12 @@
 use super::ViewBuilder;
+use crate::math::Vec2;
 use crate::{
     core::{
-        Constraints, Context, ContextMut, Interaction, Layout, ViewDrawer, ViewInteractor,
+        Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer, ViewInteractor,
         ViewSizer,
     },
     graphics::Painter,
-    View,
 };
-use glam::Vec2;
 use std::rc::Rc;
 
 pub struct Click<A: Fn(&mut ContextMut)> {

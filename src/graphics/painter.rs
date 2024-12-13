@@ -1,5 +1,5 @@
 use super::{Color, Paint, Paragraph};
-use glam::Vec2;
+use crate::math::Vec2;
 use skia_safe::{Canvas, Point, Vector};
 
 pub struct Painter<'a> {

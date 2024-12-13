@@ -4,7 +4,7 @@ use super::{
     Constraints, ContextMut, Interaction, Layout,
 };
 use crate::graphics::Painter;
-use glam::Vec2;
+use crate::math::Vec2;
 use std::{any::Any, rc::Rc};
 
 #[allow(unused, private_bounds)]

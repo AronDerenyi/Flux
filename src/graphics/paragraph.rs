@@ -1,5 +1,5 @@
 use super::Color;
-use glam::Vec2;
+use crate::math::Vec2;
 use skia_safe::{
     font_style::{Slant, Weight, Width},
     textlayout::{
@@ -31,7 +31,11 @@ impl Paragraph {
             style.color.b,
         ));
         text_style.set_font_families(&["Helvetica Neue"]);
-        text_style.set_font_style(FontStyle::new(Weight::LIGHT, Width::NORMAL, Slant::Italic));
+        text_style.set_font_style(FontStyle::new(
+            Weight::NORMAL,
+            Width::NORMAL,
+            Slant::Upright,
+        ));
 
         let mut par_style = SkParagraphStyle::new();
         par_style.set_text_align(TextAlign::Justify);

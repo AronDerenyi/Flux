@@ -1,3 +1,4 @@
+use crate::math::Vec2;
 use crate::{
     core::{
         Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer, ViewInteractor,
@@ -5,7 +6,6 @@ use crate::{
     },
     graphics::Painter,
 };
-use glam::Vec2;
 use std::rc::Rc;
 
 pub trait Component: 'static + PartialEq {

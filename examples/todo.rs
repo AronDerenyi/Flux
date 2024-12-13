@@ -1,16 +1,10 @@
-mod app;
-mod core;
-mod graphics;
-mod utils;
-mod views;
-
-use app::App;
-use core::{Binding, Context, View};
-use glam::Vec2;
-use graphics::Color;
-use views::{
-    column, label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder,
-    Paddable,
+use flux_ui::{
+    app::App,
+    column,
+    core::{Binding, Context, View},
+    graphics::Color,
+    math::Vec2,
+    views::*,
 };
 
 fn main() {
@@ -56,7 +50,7 @@ impl Component for Main {
                 .color(Color::BLUE)
                 .padding_vertical(0.0)
                 .padding_horizontal(8.0)
-                .border(2.0, Color::BLACK),
+                .border(1.0, Color::BLACK),
             spacer()
                 .width(100.0)
                 .height(100.0)
@@ -125,6 +119,6 @@ impl Component for Text {
             // .color(WHITE)
             .padding_vertical(0.0)
             .padding_horizontal(8.0)
-            .border(2.0, Color::BLACK)
+            .border(1.0, Color::BLACK)
     }
 }

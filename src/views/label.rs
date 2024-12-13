@@ -1,3 +1,4 @@
+use crate::math::Vec2;
 use crate::{
     core::{
         Constraint, Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer,
@@ -5,7 +6,6 @@ use crate::{
     },
     graphics::{Color, Painter, Paragraph, ParagraphStyle},
 };
-use glam::Vec2;
 use std::rc::Rc;
 
 #[derive(PartialEq)]

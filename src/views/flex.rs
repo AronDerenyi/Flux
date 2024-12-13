@@ -1,13 +1,12 @@
 use super::ContentBuilder;
+use crate::math::Vec2;
 use crate::{
     core::{
-        Constraint, Constraints, Context, ContextMut, Interaction, Layout, ViewDrawer,
+        Constraint, Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer,
         ViewInteractor, ViewSizer,
     },
     graphics::Painter,
-    View,
 };
-use glam::Vec2;
 use itertools::Itertools;
 use std::{cmp::Ordering, rc::Rc};
 
@@ -16,20 +15,6 @@ pub struct Flex {
     axis: usize,
     spacing: f32,
     content: ContentBuilder,
-}
-
-#[macro_export]
-macro_rules! row {
-    [$($content:tt)+] => {
-        $crate::views::row(content![$($content)+])
-    };
-}
-
-#[macro_export]
-macro_rules! column {
-    [$($content:tt)+] => {
-        $crate::views::column(content![$($content)+])
-    };
 }
 
 pub fn row(content: ContentBuilder) -> Flex {
@@ -46,6 +31,20 @@ pub fn column(content: ContentBuilder) -> Flex {
         spacing: 0.0,
         content,
     }
+}
+
+#[macro_export]
+macro_rules! row {
+    [$($content:tt)+] => {
+        $crate::views::row($crate::content![$($content)+])
+    };
+}
+
+#[macro_export]
+macro_rules! column {
+    [$($content:tt)+] => {
+        $crate::views::column($crate::content![$($content)+])
+    };
 }
 
 impl Flex {
