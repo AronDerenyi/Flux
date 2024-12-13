@@ -1,13 +1,14 @@
 use super::ContentBuilder;
 use crate::{
     core::{
-        Context, Constraint, Constraints, ContextMut, Interaction, Layout, Painter, ViewDrawer,
+        Constraint, Constraints, Context, ContextMut, Interaction, Layout, ViewDrawer,
         ViewInteractor, ViewSizer,
     },
+    graphics::Painter,
     View,
 };
+use glam::Vec2;
 use itertools::Itertools;
-use macroquad::math::Vec2;
 use std::{cmp::Ordering, rc::Rc};
 
 #[derive(PartialEq)]

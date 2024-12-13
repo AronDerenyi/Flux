@@ -1,9 +1,12 @@
 use super::ViewBuilder;
-use crate::core::{
-    Context, Constraints, ContextMut, Interaction, Layout, Painter, View, ViewDrawer,
-    ViewInteractor, ViewSizer,
+use crate::{
+    core::{
+        Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer, ViewInteractor,
+        ViewSizer,
+    },
+    graphics::{Color, Painter},
 };
-use macroquad::{color::Color, math::Vec2};
+use glam::Vec2;
 use std::rc::Rc;
 
 #[derive(PartialEq)]
@@ -41,7 +44,7 @@ impl View for Background {
 
     fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
         painter.translate(layout.position, |painter| {
-            painter.rect_filled(Vec2::ZERO, layout.size, self.color);
+            painter.draw_rect(Vec2::ZERO, layout.size, self.color);
             children[0].draw(painter);
         });
     }

@@ -1,9 +1,10 @@
 use super::{
     context::Context,
-    view_tree::{ViewDrawer, ViewInteractor, ViewSizer, ViewTree},
-    Constraints, ContextMut, Interaction, Layout, Painter,
+    view_tree::{ViewDrawer, ViewInteractor, ViewSizer},
+    Constraints, ContextMut, Interaction, Layout,
 };
-use macroquad::math::Vec2;
+use crate::graphics::Painter;
+use glam::Vec2;
 use std::{any::Any, rc::Rc};
 
 #[allow(unused, private_bounds)]

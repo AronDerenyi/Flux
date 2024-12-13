@@ -1,14 +1,12 @@
+use crate::{
+    core::{
+        Constraint, Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer,
+        ViewInteractor, ViewSizer,
+    },
+    graphics::{Color, Painter, Paragraph, ParagraphStyle},
+};
+use glam::Vec2;
 use std::rc::Rc;
-
-use crate::core::{
-    Context, Constraints, ContextMut, Interaction, Layout, Painter, View, ViewDrawer,
-    ViewInteractor, ViewSizer,
-};
-use macroquad::{
-    color::{Color, BLACK},
-    math::Vec2,
-    text::{draw_multiline_text, measure_text},
-};
 
 #[derive(PartialEq)]
 pub struct Label {
@@ -21,7 +19,7 @@ pub fn label(text: impl Into<String>) -> Label {
     Label {
         text: text.into(),
         size: 12.0,
-        color: BLACK,
+        color: Color::BLACK,
     }
 }
 
@@ -39,25 +37,31 @@ impl Label {
 
 impl View for Label {
     fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
-        Vec::new()
+        let paragraph = Paragraph::new(
+            &self.text,
+            ParagraphStyle {
+                size: self.size,
+                color: self.color,
+            },
+        );
+        vec![Rc::new(ParagraphView { paragraph })]
     }
 
     fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
-        let measurements = measure_text(&self.text, None, (self.size * 2.0) as u16, 1.0);
-        Vec2::new(measurements.width, self.size * 2.0)
+        children[0].size(constraints)
     }
 
     fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout> {
-        Vec::new()
+        vec![Layout {
+            position: Vec2::ZERO,
+            size: layout.size,
+        }]
     }
 
     fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
-        painter.text(
-            &self.text,
-            layout.position + Vec2::new(0.0, 0.0 + self.size * 1.5),
-            self.size,
-            self.color,
-        );
+        painter.translate(layout.position, |painter| {
+            children[0].draw(painter);
+        });
     }
 
     fn interact(
@@ -68,5 +72,48 @@ impl View for Label {
         children: &[ViewInteractor],
     ) -> bool {
         false
+    }
+}
+
+struct ParagraphView {
+    paragraph: Paragraph,
+}
+
+impl PartialEq for ParagraphView {
+    fn eq(&self, other: &Self) -> bool {
+        false
+    }
+}
+
+impl View for ParagraphView {
+    fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
+        Vec::new()
+    }
+
+    fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
+        self.paragraph.size(match constraints.width {
+            Constraint::Ideal => f32::INFINITY,
+            Constraint::Min => 0.0,
+            Constraint::Max => f32::INFINITY,
+            Constraint::Fixed(width) => width,
+        })
+    }
+
+    fn layout(&self, layout: Layout, children: &[ViewSizer]) -> Vec<Layout> {
+        Vec::new()
+    }
+
+    fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
+        painter.draw_paragraph(&self.paragraph, layout.position, layout.size.x);
+    }
+
+    fn interact(
+        &self,
+        context: &mut ContextMut,
+        layout: Layout,
+        interaction: Interaction,
+        children: &[ViewInteractor],
+    ) -> bool {
+        todo!()
     }
 }

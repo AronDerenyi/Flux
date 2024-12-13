@@ -1,9 +1,12 @@
 use super::ViewBuilder;
-use crate::core::{
-    Context, Constraints, ContextMut, Interaction, Layout, Painter, View, ViewDrawer,
-    ViewInteractor, ViewSizer,
+use crate::{
+    core::{
+        Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer, ViewInteractor,
+        ViewSizer,
+    },
+    graphics::{Color, Paint, Painter},
 };
-use macroquad::{color::Color, math::Vec2};
+use glam::Vec2;
 use std::rc::Rc;
 
 #[derive(PartialEq)]
@@ -43,7 +46,11 @@ impl View for Border {
 
     fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
         painter.translate(layout.position, |painter| {
-            painter.rect_stroke(Vec2::ZERO, layout.size, self.width, self.color);
+            painter.draw_rect(
+                Vec2::ZERO,
+                layout.size,
+                Paint::stroke(self.width, self.color),
+            );
             children[0].draw(painter);
         });
     }

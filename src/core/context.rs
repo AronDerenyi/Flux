@@ -1,18 +1,15 @@
 use crate::utils::{bigraph::Bigraph, id_vec::Id};
 use std::{
     any::{Any, TypeId},
-    borrow::Borrow,
-    cell::{Ref, RefCell, RefMut},
+    cell::RefCell,
     collections::{HashMap, HashSet},
     marker::PhantomData,
-    ops::{Deref, DerefMut},
-    rc::Rc,
 };
 
-type StateKey = (Option<Id>, TypeId);
-type States = HashMap<StateKey, Box<dyn Any>>;
-type StateDependencies = Bigraph<Option<Id>, StateKey>;
-type StateChanges = HashSet<StateKey>;
+pub type StateKey = (Option<Id>, TypeId);
+pub type States = HashMap<StateKey, Box<dyn Any>>;
+pub type StateDependencies = Bigraph<Option<Id>, StateKey>;
+pub type StateChanges = HashSet<StateKey>;
 
 pub struct Context<'a> {
     id: Option<Id>,

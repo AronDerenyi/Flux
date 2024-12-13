@@ -1,123 +1,25 @@
+mod app;
 mod core;
-mod skia;
+mod graphics;
 mod utils;
 mod views;
-mod winit;
 
 use ::core::f32;
 use ::winit::event_loop::EventLoop;
+use app::App;
 use core::{Binding, Context, View};
+use glam::Vec2;
+use graphics::{Color, Painter, Paragraph, ParagraphStyle};
 use itertools::Itertools;
-use macroquad::{
-    color::{BLACK, BLUE, GREEN, RED},
-    math::Vec2,
-};
-use skia::SkiaRenderer;
-use skia_safe::{
-    textlayout::{
-        FontCollection, Paragraph, ParagraphBuilder, ParagraphStyle, TextAlign, TextHeightBehavior,
-        TextStyle,
-    },
-    Canvas, Color, Color4f, ConditionallySend, Font, FontMgr, Paint, Point, Rect, Sendable,
-    TextBlob, Typeface,
-};
 use views::{
     column, label, row, spacer, Backgroundable, Borderable, Clickable, Component, ContentBuilder,
     Paddable,
 };
-use winit::WinitApp;
 // use winit::{dpi::LogicalUnit, event_loop::EventLoop};
 
 fn main() {
-    dbg!(FontMgr::new().family_names().collect_vec());
-
     let event_loop = EventLoop::new().unwrap();
-    event_loop
-        .run_app(&mut WinitApp::new(
-            |window| SkiaRenderer::new(window),
-            render,
-        ))
-        .unwrap();
-}
-
-thread_local! {
-    static FONT_COLLECTION: FontCollection = {
-        let mut collection = FontCollection::new();
-        collection.set_asset_font_manager(Some(FontMgr::new()));
-        collection
-    };
-}
-
-fn render(canvas: &Canvas) {
-    canvas.clear(Color4f::new(1.0, 1.0, 1.0, 1.0));
-    // canvas.draw_text_blob(
-    //     TextBlob::from_str("Hello\nWorld", &Font::from_typeface(a.clone(), Some(12.0))).unwrap(),
-    //     Point::new(100.0, 100.0),
-    //     &Paint::new(Color4f::new(0.0, 0.0, 0.0, 1.0), None),
-    // );
-    let mut style = TextStyle::new();
-    style.set_font_size(14.0);
-    style.set_color(Color::from_argb(255, 0, 0, 0));
-    style.set_font_families(&["Comic Sans MS"]);
-
-    let mut par_style = ParagraphStyle::new();
-    par_style.set_text_align(TextAlign::Justify);
-    par_style.set_max_lines(4);
-    par_style.set_text_height_behavior(TextHeightBehavior::DisableFirstAscent);
-    par_style.set_ellipsis("...");
-
-    let a = FONT_COLLECTION.with(|collection| collection.clone());
-    let mut paragraph = ParagraphBuilder::new(&par_style, a)
-        .push_style(&style)
-        .add_text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.")
-        .build();
-    paragraph.layout(f32::INFINITY);
-    paragraph.layout(550.0);
-
-    // dbg!(paragraph.longest_line());
-    // dbg!(paragraph.max_width());
-    // dbg!(paragraph.max_intrinsic_width());
-    // dbg!(paragraph.min_intrinsic_width());
-    // paragraph.layout(paragraph.min_intrinsic_width());
-    let w = paragraph.longest_line() * 0.0 + 550.0;
-    let h = paragraph.height();
-    // canvas.draw_rect(
-    //     Rect::from_xywh(50.0, 50.0, w, h),
-    //     &Paint::new(Color4f::new(0.7, 0.7, 0.7, 1.0), None),
-    // );
-    paragraph.paint(canvas, Point::new(50.0, 50.0));
-    // println!("{}", paragraph.height());
-    // canvas.draw_text_blob(
-    //     paragraph,
-    //     Point::new(100.0, 150.0),
-    //     &Paint::new(Color4f::new(1.0, 1.0, 1.0, 1.0), None),
-    // );
-    // canvas.draw_text_blob(
-    //     TextBlob::from_str("Hello\nWorld", &Font::from_typeface(a.clone(), Some(24.0))).unwrap(),
-    //     Point::new(100.0, 210.0),
-    //     &Paint::new(Color4f::new(1.0, 1.0, 1.0, 1.0), None),
-    // );
-
-    // canvas.clear(Color4f::new(0.0, 0.0, 0.0, 1.0));
-    // for _ in 0..1000 {
-    //     canvas.draw_rect(
-    //         Rect::from_xywh(
-    //             rand::random::<f32>() * 1400.0,
-    //             rand::random::<f32>() * 1000.0,
-    //             200.0,
-    //             200.0,
-    //         ),
-    //         &Paint::new(
-    //             Color4f::new(
-    //                 rand::random::<f32>(),
-    //                 rand::random::<f32>(),
-    //                 rand::random::<f32>(),
-    //                 rand::random::<f32>(),
-    //             ),
-    //             None,
-    //         ),
-    //     );
-    // }
+    event_loop.run_app(&mut App::new(Main)).unwrap();
 }
 
 // fn window_conf() -> Conf {
@@ -221,20 +123,21 @@ impl Component for Main {
         let a = length + *ctx.get(count);
 
         return column![
-            label("Test default")
-                .padding_vertical(0.0)
-                .padding_horizontal(8.0)
-                .border(4.0, BLACK),
-            label("Test 16, blue")
+            label("Test\ndefaultg")
                 .size(16.0)
-                .color(BLUE)
                 .padding_vertical(0.0)
                 .padding_horizontal(8.0)
-                .border(4.0, BLACK),
+                .background(Color::BLUE),
+            label("Test 16, blue")
+                .size(12.0)
+                .color(Color::BLUE)
+                .padding_vertical(0.0)
+                .padding_horizontal(8.0)
+                .border(2.0, Color::BLACK),
             spacer()
                 .width(100.0)
                 .height(100.0)
-                .background(RED)
+                .background(Color::RED)
                 .on_click(move |ctx| {
                     *ctx.get_mut(count) += 1;
                     let state = ctx.get_mut(state);
@@ -246,13 +149,13 @@ impl Component for Main {
                 .width(20.0)
                 .max_height(100.0)
                 .min_height(20.0)
-                .background(GREEN),
+                .background(Color::GREEN),
             spacer()
                 .height(30.0)
                 .width(20.0)
                 .max_height(100.0)
                 .min_height(30.0)
-                .background(GREEN),
+                .background(Color::GREEN),
             column(ContentBuilder::from_items(0..1, {
                 let items = &ctx.get(state).items;
                 move |_| {
@@ -283,8 +186,8 @@ impl Component for Item {
             } else {
                 self.size.x
             })
-            .border(4.0, BLACK)
-            .background(BLUE)
+            .border(4.0, Color::BLACK)
+            .background(Color::BLUE)
             .on_click(move |_| println!("Clicked: {}", index))]
     }
 }
@@ -299,6 +202,6 @@ impl Component for Text {
             // .color(WHITE)
             .padding_vertical(0.0)
             .padding_horizontal(8.0)
-            .border(4.0, BLACK)
+            .border(2.0, Color::BLACK)
     }
 }

@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.13.0"
-macroquad = "0.4.13"
 metal-rs = { package = "metal", version = "0.24.0" }
 raw-window-handle = "0.6.0"
 objc = "0.2.7"
@@ -15,3 +14,4 @@ foreign-types-shared = "0.1.1"
 skia-safe = { version = "0.80.1", features = ["metal", "textlayout"] }
 winit = "0.30.5"
 rand = "0.8.5"
+glam = "0.29.2"

@@ -1,4 +1,4 @@
-use macroquad::math::Vec2;
+use glam::Vec2;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Interaction {

@@ -1,31 +1,24 @@
-use crate::winit::{
-    application::ApplicationHandler,
-    dpi::{LogicalSize, Size},
-    event::WindowEvent,
-    event_loop::{ActiveEventLoop, EventLoop},
-    raw_window_handle::HasWindowHandle,
-    window::{Window, WindowAttributes, WindowId},
-    WinitRenderer,
-};
 use cocoa::{appkit::NSView, base::id as cocoa_id};
 use core_graphics_types::geometry::CGSize;
 use foreign_types_shared::{ForeignType, ForeignTypeRef};
 use metal_rs::{CommandQueue, Device, MTLPixelFormat, MetalLayer};
-use objc::rc::autoreleasepool;
 use objc::runtime::YES;
 use skia_safe::{
     gpu::{self, backend_render_targets, mtl, DirectContext, SurfaceOrigin},
-    scalar, Canvas, Color4f, ColorType, Paint, Point, Rect,
+    scalar, Canvas, Color4f, ColorType,
 };
+use winit::{raw_window_handle::HasWindowHandle, window::Window};
 
-pub struct SkiaRenderer {
+use super::Painter;
+
+pub struct Renderer {
     layer: MetalLayer,
     queue: CommandQueue,
     skia: DirectContext,
     scale_factor: f64,
 }
 
-impl SkiaRenderer {
+impl Renderer {
     pub fn new(window: &Window) -> Self {
         let window_handle = window
             .window_handle()
@@ -75,19 +68,17 @@ impl SkiaRenderer {
             scale_factor: window.scale_factor(),
         }
     }
-}
 
-impl WinitRenderer for SkiaRenderer {
-    fn set_size(&mut self, width: u32, height: u32) {
+    pub fn set_size(&mut self, width: u32, height: u32) {
         self.layer
             .set_drawable_size(CGSize::new(width as f64, height as f64));
     }
 
-    fn set_scale_factor(&mut self, scale_factor: f64) {
+    pub fn set_scale_factor(&mut self, scale_factor: f64) {
         self.scale_factor = scale_factor;
     }
 
-    fn render(&mut self, f: impl FnOnce(&Canvas)) {
+    pub fn render(&mut self, f: impl FnOnce(&mut Painter)) {
         let Some(drawable) = self.layer.next_drawable() else {
             return;
         };
@@ -117,8 +108,9 @@ impl WinitRenderer for SkiaRenderer {
         };
 
         let canvas = surface.canvas();
+        canvas.clear(Color4f::new(1.0, 1.0, 1.0, 1.0));
         canvas.scale((self.scale_factor as f32, self.scale_factor as f32));
-        f(canvas);
+        f(&mut Painter::new(&canvas));
 
         self.skia.flush_and_submit();
         drop(surface);

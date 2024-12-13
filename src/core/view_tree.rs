@@ -1,11 +1,11 @@
-use super::{Constraint, Constraints, Context, ContextMut, Interaction, Layout, Painter, View};
-use crate::utils::id_vec::{Id, IdVec};
-use itertools::{EitherOrBoth::*, Itertools};
-use macroquad::{
-    math::Vec2,
-    window::{screen_height, screen_width},
+use super::{Constraint, Constraints, Context, ContextMut, Interaction, Layout, View};
+use crate::{
+    graphics::Painter,
+    utils::id_vec::{Id, IdVec},
 };
-use std::{any::Any, cell::RefCell, collections::HashMap, pin::Pin, rc::Rc};
+use glam::Vec2;
+use itertools::{EitherOrBoth::*, Itertools};
+use std::{any::Any, cell::RefCell, rc::Rc};
 
 pub struct ViewTree {
     root: Id,
@@ -21,7 +21,7 @@ struct Node {
 }
 
 impl ViewTree {
-    pub fn new(root: impl View) -> Self {
+    pub fn build_from(context: &mut Context, size: Vec2, root: impl View) -> Self {
         let mut nodes = IdVec::new();
         let root = nodes.insert(RefCell::new(Node {
             parent: None,
@@ -33,10 +33,12 @@ impl ViewTree {
             },
         }));
 
-        ViewTree { root, nodes }
+        let mut tree = ViewTree { root, nodes };
+        tree.rebuild(context, size, root);
+        tree
     }
 
-    pub fn update(&mut self, context: &mut Context, mut id: Id) {
+    pub fn rebuild(&mut self, context: &mut Context, size: Vec2, mut id: Id) {
         self.build(context, id);
 
         let size = ViewSizer {
@@ -44,8 +46,8 @@ impl ViewTree {
             id: self.root,
         }
         .size(Constraints {
-            width: Constraint::Fixed(screen_width()),
-            height: Constraint::Fixed(screen_height()),
+            width: Constraint::Fixed(size.x),
+            height: Constraint::Fixed(size.y),
         });
 
         self.layout(
@@ -57,13 +59,31 @@ impl ViewTree {
         );
     }
 
-    pub fn draw(&self) {
-        let mut painter = Painter::new(Vec2::ZERO);
+    pub fn resize(&mut self, size: Vec2) {
+        let size = ViewSizer {
+            tree: self,
+            id: self.root,
+        }
+        .size(Constraints {
+            width: Constraint::Fixed(size.x),
+            height: Constraint::Fixed(size.y),
+        });
+
+        self.layout(
+            self.root,
+            Layout {
+                position: Vec2::ZERO,
+                size,
+            },
+        );
+    }
+
+    pub fn draw(&self, painter: &mut Painter) {
         ViewDrawer {
             tree: self,
             id: self.root,
         }
-        .draw(&mut painter);
+        .draw(painter);
     }
 
     pub fn interact(&self, context: &mut ContextMut, interaction: Interaction) -> bool {
