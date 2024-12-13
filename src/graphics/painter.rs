@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 use super::{Color, Paint, Paragraph};
 use glam::Vec2;
 use skia_safe::{Canvas, Point, Vector};

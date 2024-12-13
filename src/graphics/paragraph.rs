@@ -4,7 +4,7 @@ use skia_safe::{
     font_style::{Slant, Weight, Width},
     textlayout::{
         FontCollection, Paragraph as SkParagraph, ParagraphBuilder,
-        ParagraphStyle as SkParagraphStyle, TextAlign, TextHeightBehavior, TextStyle,
+        ParagraphStyle as SkParagraphStyle, TextAlign, TextStyle,
     },
     FontMgr, FontStyle,
 };

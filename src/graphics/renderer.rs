@@ -5,7 +5,7 @@ use metal_rs::{CommandQueue, Device, MTLPixelFormat, MetalLayer};
 use objc::runtime::YES;
 use skia_safe::{
     gpu::{self, backend_render_targets, mtl, DirectContext, SurfaceOrigin},
-    scalar, Canvas, Color4f, ColorType,
+    scalar, Color4f, ColorType,
 };
 use winit::{raw_window_handle::HasWindowHandle, window::Window};
 
