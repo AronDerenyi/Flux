@@ -8,16 +8,17 @@ description = "A SwiftUI inspired declarative UI framework for Rust"
 
 [dependencies]
 itertools = "0.13.0"
+glam = "0.29.2"
+winit = "0.30.5"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+skia-safe = { version = "0.80.1", features = ["metal", "textlayout"] }
 metal-rs = { package = "metal", version = "0.24.0" }
 raw-window-handle = "0.6.0"
 objc = "0.2.7"
 cocoa = "0.26.0"
 core-graphics-types = "0.1.1"
 foreign-types-shared = "0.1.1"
-skia-safe = { version = "0.80.1", features = ["metal", "textlayout"] }
-winit = "0.30.5"
-rand = "0.8.5"
-glam = "0.29.2"
 
 [[example]]
 name = "todo"
