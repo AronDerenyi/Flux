@@ -16,9 +16,9 @@ pub struct Background {
 }
 
 pub trait Backgroundable: View + Sized {
-    fn background(self, color: Color) -> Background {
+    fn background(self, color: impl Into<Color>) -> Background {
         Background {
-            color,
+            color: color.into(),
             view: ViewBuilder::from_view(self),
         }
     }
