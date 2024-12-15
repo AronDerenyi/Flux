@@ -1,23 +1,29 @@
 #![allow(unused)]
-mod background;
-mod border;
-mod click;
-mod component;
-mod flex;
-mod label;
-mod padding;
-mod spacer;
+pub mod background;
+pub mod border;
+pub mod click;
+pub mod component;
+pub mod flex;
+pub mod label;
+pub mod padding;
+pub mod spacer;
 
-pub use background::Backgroundable;
-pub use border::Borderable;
-pub use click::Clickable;
-pub use component::Component;
-pub use flex::{column, row};
-pub use label::label;
-pub use padding::Paddable;
-pub use spacer::spacer;
+pub mod prelude {
+    pub use super::{
+        background::Backgroundable,
+        border::Borderable,
+        click::Clickable,
+        component::Component,
+        flex::{col, row},
+        label::label,
+        padding::Paddable,
+        spacer::spacer,
+        ContentBuilder, ViewBuilder,
+    };
+    pub use crate::{col, content, row};
+}
 
-use crate::core::View;
+use crate::core::view::View;
 use std::rc::Rc;
 
 pub struct ViewBuilder {

@@ -1,9 +1,11 @@
 use crate::{
     core::{
-        context::{StateChanges, StateDependencies, States},
-        Context, ContextMut, Interaction, View, ViewTree,
+        context::{Context, ContextMut, StateChanges, StateDependencies, States},
+        interaction::Interaction,
+        view::View,
+        view_tree::ViewTree,
     },
-    graphics::Renderer,
+    graphics::renderer::Renderer,
     utils::{bigraph::Bigraph, id_vec::Id},
 };
 use glam::Vec2;

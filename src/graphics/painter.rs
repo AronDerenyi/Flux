@@ -1,4 +1,4 @@
-use super::{Color, Paint, Paragraph};
+use super::{color::Color, paint::Paint, paragraph::Paragraph};
 use crate::math::Vec2;
 use skia_safe::{Canvas, Point, Vector};
 

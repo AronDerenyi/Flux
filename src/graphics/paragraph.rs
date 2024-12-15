@@ -1,4 +1,4 @@
-use super::Color;
+use super::color::Color;
 use crate::math::Vec2;
 use skia_safe::{
     font_style::{Slant, Weight, Width},

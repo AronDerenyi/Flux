@@ -6,10 +6,10 @@ use std::{
     marker::PhantomData,
 };
 
-pub type StateKey = (Option<Id>, TypeId);
-pub type States = HashMap<StateKey, Box<dyn Any>>;
-pub type StateDependencies = Bigraph<Option<Id>, StateKey>;
-pub type StateChanges = HashSet<StateKey>;
+pub(crate) type StateKey = (Option<Id>, TypeId);
+pub(crate) type States = HashMap<StateKey, Box<dyn Any>>;
+pub(crate) type StateDependencies = Bigraph<Option<Id>, StateKey>;
+pub(crate) type StateChanges = HashSet<StateKey>;
 
 pub struct Context<'a> {
     id: Option<Id>,

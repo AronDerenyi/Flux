@@ -1,13 +1,19 @@
-use super::{Constraint, Constraints, Context, ContextMut, Interaction, Layout, View};
+use super::{
+    constraints::{Constraint, Constraints},
+    context::{Context, ContextMut},
+    interaction::Interaction,
+    layout::Layout,
+    view::View,
+};
 use crate::math::Vec2;
 use crate::{
-    graphics::Painter,
+    graphics::painter::Painter,
     utils::id_vec::{Id, IdVec},
 };
 use itertools::{EitherOrBoth::*, Itertools};
 use std::{any::Any, cell::RefCell, rc::Rc};
 
-pub struct ViewTree {
+pub(crate) struct ViewTree {
     root: Id,
     nodes: IdVec<RefCell<Node>>,
 }
@@ -21,7 +27,7 @@ struct Node {
 }
 
 impl ViewTree {
-    pub fn build_from(context: &mut Context, size: Vec2, root: impl View) -> Self {
+    pub(crate) fn build_from(context: &mut Context, size: Vec2, root: impl View) -> Self {
         let mut nodes = IdVec::new();
         let root = nodes.insert(RefCell::new(Node {
             parent: None,
@@ -38,7 +44,7 @@ impl ViewTree {
         tree
     }
 
-    pub fn rebuild(&mut self, context: &mut Context, size: Vec2, mut id: Id) {
+    pub(crate) fn rebuild(&mut self, context: &mut Context, size: Vec2, mut id: Id) {
         self.build(context, id);
 
         let size = ViewSizer {
@@ -59,7 +65,7 @@ impl ViewTree {
         );
     }
 
-    pub fn resize(&mut self, size: Vec2) {
+    pub(crate) fn resize(&mut self, size: Vec2) {
         let size = ViewSizer {
             tree: self,
             id: self.root,
@@ -78,7 +84,7 @@ impl ViewTree {
         );
     }
 
-    pub fn draw(&self, painter: &mut Painter) {
+    pub(crate) fn draw(&self, painter: &mut Painter) {
         ViewDrawer {
             tree: self,
             id: self.root,
@@ -86,7 +92,7 @@ impl ViewTree {
         .draw(painter);
     }
 
-    pub fn interact(&self, context: &mut ContextMut, interaction: Interaction) -> bool {
+    pub(crate) fn interact(&self, context: &mut ContextMut, interaction: Interaction) -> bool {
         ViewInteractor {
             tree: self,
             id: self.root,

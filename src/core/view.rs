@@ -1,9 +1,11 @@
 use super::{
-    context::Context,
+    constraints::Constraints,
+    context::{Context, ContextMut},
+    interaction::Interaction,
+    layout::Layout,
     view_tree::{ViewDrawer, ViewInteractor, ViewSizer},
-    Constraints, ContextMut, Interaction, Layout,
 };
-use crate::graphics::Painter;
+use crate::graphics::painter::Painter;
 use crate::math::Vec2;
 use std::{any::Any, rc::Rc};
 

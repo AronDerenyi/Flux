@@ -1,11 +1,14 @@
-mod color;
-mod paint;
-mod painter;
-mod paragraph;
-mod renderer;
+pub mod color;
+pub mod paint;
+pub mod painter;
+pub mod paragraph;
+pub(crate) mod renderer;
 
-pub use color::Color;
-pub use paint::Paint;
-pub use painter::Painter;
-pub use paragraph::{Paragraph, ParagraphStyle};
-pub use renderer::Renderer;
+pub mod prelude {
+    pub use super::{
+        color::Color,
+        paint::Paint,
+        painter::Painter,
+        paragraph::{Paragraph, ParagraphStyle},
+    };
+}

@@ -1,3 +1,4 @@
+use super::painter::Painter;
 use cocoa::{appkit::NSView, base::id as cocoa_id};
 use core_graphics_types::geometry::CGSize;
 use foreign_types_shared::{ForeignType, ForeignTypeRef};
@@ -9,9 +10,7 @@ use skia_safe::{
 };
 use winit::{raw_window_handle::HasWindowHandle, window::Window};
 
-use super::Painter;
-
-pub struct Renderer {
+pub(crate) struct Renderer {
     layer: MetalLayer,
     queue: CommandQueue,
     skia: DirectContext,
@@ -19,7 +18,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(window: &Window) -> Self {
+    pub(crate) fn new(window: &Window) -> Self {
         let window_handle = window
             .window_handle()
             .expect("Failed to retrieve a window handle");
@@ -69,16 +68,16 @@ impl Renderer {
         }
     }
 
-    pub fn set_size(&mut self, width: u32, height: u32) {
+    pub(crate) fn set_size(&mut self, width: u32, height: u32) {
         self.layer
             .set_drawable_size(CGSize::new(width as f64, height as f64));
     }
 
-    pub fn set_scale_factor(&mut self, scale_factor: f64) {
+    pub(crate) fn set_scale_factor(&mut self, scale_factor: f64) {
         self.scale_factor = scale_factor;
     }
 
-    pub fn render(&mut self, f: impl FnOnce(&mut Painter)) {
+    pub(crate) fn render(&mut self, f: impl FnOnce(&mut Painter)) {
         let Some(drawable) = self.layer.next_drawable() else {
             return;
         };

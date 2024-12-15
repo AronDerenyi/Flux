@@ -2,10 +2,14 @@ use super::ContentBuilder;
 use crate::math::Vec2;
 use crate::{
     core::{
-        Constraint, Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer,
-        ViewInteractor, ViewSizer,
+        constraints::{Constraint, Constraints},
+        context::{Context, ContextMut},
+        interaction::Interaction,
+        layout::Layout,
+        view::View,
+        view_tree::{ViewDrawer, ViewInteractor, ViewSizer},
     },
-    graphics::Painter,
+    graphics::painter::Painter,
 };
 use itertools::Itertools;
 use std::{cmp::Ordering, rc::Rc};
@@ -25,7 +29,7 @@ pub fn row(content: ContentBuilder) -> Flex {
     }
 }
 
-pub fn column(content: ContentBuilder) -> Flex {
+pub fn col(content: ContentBuilder) -> Flex {
     Flex {
         axis: 1,
         spacing: 0.0,
@@ -36,14 +40,14 @@ pub fn column(content: ContentBuilder) -> Flex {
 #[macro_export]
 macro_rules! row {
     [$($content:tt)+] => {
-        $crate::views::row($crate::content![$($content)+])
+        $crate::views::flex::row($crate::content![$($content)+])
     };
 }
 
 #[macro_export]
-macro_rules! column {
+macro_rules! col {
     [$($content:tt)+] => {
-        $crate::views::column($crate::content![$($content)+])
+        $crate::views::flex::col($crate::content![$($content)+])
     };
 }
 

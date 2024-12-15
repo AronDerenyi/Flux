@@ -1,4 +1,4 @@
-use super::Color;
+use super::color::Color;
 
 pub enum Paint {
     Fill { color: Color },

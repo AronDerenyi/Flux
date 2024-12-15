@@ -1,12 +1,4 @@
-use flux_ui::{
-    app::App,
-    column,
-    core::{Binding, Context, View},
-    graphics::Color,
-    math::Vec2,
-    row,
-    views::*,
-};
+use flux_ui::prelude::*;
 
 fn main() {
     App::run(ContentView);
@@ -65,8 +57,8 @@ impl Component for ListView {
         let todos_binding = self.todos;
 
         let selected = ctx.get(self.selected);
-        column![
-            column(ContentBuilder::from_items(
+        col![
+            col(ContentBuilder::from_items(
                 ctx.get(self.todos).items.iter().enumerate(),
                 |(index, item)| {
                     ListItemView {

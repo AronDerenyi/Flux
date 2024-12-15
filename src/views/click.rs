@@ -2,10 +2,14 @@ use super::ViewBuilder;
 use crate::math::Vec2;
 use crate::{
     core::{
-        Constraints, Context, ContextMut, Interaction, Layout, View, ViewDrawer, ViewInteractor,
-        ViewSizer,
+        constraints::Constraints,
+        context::{Context, ContextMut},
+        interaction::Interaction,
+        layout::Layout,
+        view::View,
+        view_tree::{ViewDrawer, ViewInteractor, ViewSizer},
     },
-    graphics::Painter,
+    graphics::painter::Painter,
 };
 use std::rc::Rc;
 
