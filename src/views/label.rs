@@ -77,6 +77,7 @@ impl View for Label {
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool {
         false
@@ -120,8 +121,9 @@ impl View for TextView {
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool {
-        todo!()
+        false
     }
 }

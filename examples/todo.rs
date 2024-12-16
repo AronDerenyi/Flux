@@ -109,13 +109,15 @@ impl Component for ListItemView {
         row![
             label(&self.todo.name).size(16.0),
             spacer().height(0.0),
-            spacer()
-                .width(20.0)
-                .height(20.0)
+            label("Delete")
+                .size(12.0)
+                .color(Color::WHITE)
+                .padding_bottom(1.0)
+                .padding_axial(8.0, 4.0)
                 .background(BoxDecoration {
                     color: Some(Color::RED),
                     border: None,
-                    radius: 10.0
+                    radius: 32.0,
                 })
                 .on_click(move |ctx| {
                     ctx.get_mut(todos).items.remove(index);

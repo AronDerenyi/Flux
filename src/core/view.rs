@@ -24,6 +24,7 @@ pub trait View: 'static + ViewEq {
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool;
 

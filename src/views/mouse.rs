@@ -61,15 +61,19 @@ impl View for MouseListener {
         vec![
             self.view.build(),
             Rc::new(InteractionHandler {
-                action: move |ctx, size, interaction| match (*ctx.get(state), interaction) {
-                    (MouseState::Idle, Interaction::MouseMove(point)) => {
+                action: move |ctx, size, interaction, consumed| match (
+                    *ctx.get(state),
+                    interaction,
+                    consumed,
+                ) {
+                    (MouseState::Idle, Interaction::MouseMove(point), _) => {
                         if inside(size, point) {
                             *ctx.get_mut(state) = MouseState::Hover;
                             action(ctx, MouseState::Idle, MouseState::Hover);
                         }
                         false
                     }
-                    (MouseState::Idle, Interaction::MouseDown(point)) => {
+                    (MouseState::Idle, Interaction::MouseDown(point), false) => {
                         if inside(size, point) {
                             *ctx.get_mut(state) = MouseState::Pressed;
                             action(ctx, MouseState::Idle, MouseState::Pressed);
@@ -78,14 +82,14 @@ impl View for MouseListener {
                             false
                         }
                     }
-                    (MouseState::Hover, Interaction::MouseMove(point)) => {
+                    (MouseState::Hover, Interaction::MouseMove(point), _) => {
                         if !inside(size, point) {
                             *ctx.get_mut(state) = MouseState::Idle;
                             action(ctx, MouseState::Hover, MouseState::Idle);
                         }
                         false
                     }
-                    (MouseState::Hover, Interaction::MouseDown(point)) => {
+                    (MouseState::Hover, Interaction::MouseDown(point), false) => {
                         if inside(size, point) {
                             *ctx.get_mut(state) = MouseState::Pressed;
                             action(ctx, MouseState::Hover, MouseState::Pressed);
@@ -94,7 +98,7 @@ impl View for MouseListener {
                             false
                         }
                     }
-                    (MouseState::Pressed, Interaction::MouseUp(point)) => {
+                    (MouseState::Pressed, Interaction::MouseUp(point), _) => {
                         if inside(size, point) {
                             *ctx.get_mut(state) = MouseState::Hover;
                             action(ctx, MouseState::Pressed, MouseState::Hover);
@@ -139,17 +143,14 @@ impl View for MouseListener {
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool {
         let interaction = interaction.translate_into(layout.position);
-
-        if children[0].interact(context, interaction) {
-            true
-        } else if children[1].interact(context, interaction) {
-            true
-        } else {
-            false
-        }
+        let mut child_consumed = false;
+        child_consumed |= children[0].interact(context, interaction, consumed);
+        child_consumed |= children[1].interact(context, interaction, consumed || child_consumed);
+        child_consumed
 
         // if let Interaction::MouseDown(point) = interaction {
         //     if point.x >= 0.0
@@ -168,11 +169,11 @@ impl View for MouseListener {
     }
 }
 
-pub struct InteractionHandler<A: Fn(&mut ContextMut, Vec2, Interaction) -> bool + 'static> {
+pub struct InteractionHandler<A: Fn(&mut ContextMut, Vec2, Interaction, bool) -> bool + 'static> {
     action: A,
 }
 
-impl<A: Fn(&mut ContextMut, Vec2, Interaction) -> bool + 'static> PartialEq
+impl<A: Fn(&mut ContextMut, Vec2, Interaction, bool) -> bool + 'static> PartialEq
     for InteractionHandler<A>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -180,7 +181,9 @@ impl<A: Fn(&mut ContextMut, Vec2, Interaction) -> bool + 'static> PartialEq
     }
 }
 
-impl<A: Fn(&mut ContextMut, Vec2, Interaction) -> bool + 'static> View for InteractionHandler<A> {
+impl<A: Fn(&mut ContextMut, Vec2, Interaction, bool) -> bool + 'static> View
+    for InteractionHandler<A>
+{
     fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
         Vec::new()
     }
@@ -213,9 +216,10 @@ impl<A: Fn(&mut ContextMut, Vec2, Interaction) -> bool + 'static> View for Inter
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool {
-        (self.action)(context, layout.size, interaction)
+        (self.action)(context, layout.size, interaction, consumed)
     }
 }
 

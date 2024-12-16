@@ -166,15 +166,15 @@ impl View for Flex {
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool {
         let interaction = interaction.translate_into(layout.position);
+        let mut child_consumed = false;
         for child in children {
-            if child.interact(context, interaction) {
-                return true;
-            }
+            child_consumed |= child.interact(context, interaction, consumed || child_consumed)
         }
-        false
+        child_consumed
     }
 }
 

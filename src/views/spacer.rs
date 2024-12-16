@@ -118,6 +118,7 @@ impl View for Spacer {
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool {
         false

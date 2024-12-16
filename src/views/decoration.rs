@@ -80,9 +80,14 @@ impl<D: Decoration> View for Decorated<D> {
         context: &mut ContextMut,
         layout: Layout,
         interaction: Interaction,
+        consumed: bool,
         children: &[ViewInteractor],
     ) -> bool {
-        children[0].interact(context, interaction.translate_into(layout.position))
+        children[0].interact(
+            context,
+            interaction.translate_into(layout.position),
+            consumed,
+        )
     }
 }
 

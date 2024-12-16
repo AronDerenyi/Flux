@@ -97,7 +97,7 @@ impl ViewTree {
             tree: self,
             id: self.root,
         }
-        .interact(context, interaction)
+        .interact(context, interaction, false)
     }
 
     fn build(&mut self, context: &mut Context, id: Id) {
@@ -256,13 +256,19 @@ pub struct ViewInteractor<'a> {
 }
 
 impl ViewInteractor<'_> {
-    pub fn interact(&self, context: &mut ContextMut, interaction: Interaction) -> bool {
+    pub fn interact(
+        &self,
+        context: &mut ContextMut,
+        interaction: Interaction,
+        consumed: bool,
+    ) -> bool {
         context.with_id(self.id, |context| {
             let node = self.tree.nodes[self.id].borrow();
             node.view.interact(
                 context,
                 node.layout,
                 interaction,
+                consumed,
                 &node
                     .children
                     .iter()
