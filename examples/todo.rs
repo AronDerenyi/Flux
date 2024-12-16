@@ -48,8 +48,12 @@ impl Component for ContentView {
             ],
         });
 
-        col![spacer().height(28.0), ListView { selected, todos }]
-            .background(Color::from_rgba(255, 255, 255, 200))
+        col![
+            spacer()
+                .height(28.0)
+                .background::<Color>((223, 223, 223, 200).into()),
+            ListView { selected, todos }.background(Color::from_rgba(255, 255, 255, 200))
+        ]
     }
 }
 
@@ -136,7 +140,7 @@ impl Component for ListItemView {
         .background(BoxDecoration {
             color: Some(Color::WHITE),
             border: if self.selected {
-                Some(Border {
+                Some(BorderDecoration {
                     width: 2.0,
                     color: 0x404040.into(),
                 })

@@ -11,7 +11,7 @@ pub mod prelude {
     pub use super::{
         click::Clickable,
         component::Component,
-        decoration::{Border, BoxDecoration, Decoratable, Decoration},
+        decoration::{BorderDecoration, BoxDecoration, Decoratable, Decoration},
         flex::{col, row},
         label::label,
         padding::Paddable,

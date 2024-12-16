@@ -37,8 +37,8 @@ pub trait Decoratable: View + Sized {
         }
     }
 
-    fn border(self, width: f32, color: impl Into<Color>) -> Decorated<Border> {
-        self.foreground(Border {
+    fn border(self, width: f32, color: impl Into<Color>) -> Decorated<BorderDecoration> {
+        self.foreground(BorderDecoration {
             width,
             color: color.into(),
         })
@@ -97,12 +97,12 @@ impl Decoration for Color {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Border {
+pub struct BorderDecoration {
     pub width: f32,
     pub color: Color,
 }
 
-impl Decoration for Border {
+impl Decoration for BorderDecoration {
     fn draw(&self, size: Vec2, painter: &mut Painter) {
         painter.draw_rect(Vec2::ZERO, size, Paint::stroke(self.width, self.color));
     }
@@ -111,7 +111,7 @@ impl Decoration for Border {
 #[derive(PartialEq)]
 pub struct BoxDecoration {
     pub color: Option<Color>,
-    pub border: Option<Border>,
+    pub border: Option<BorderDecoration>,
     pub radius: f32,
 }
 
