@@ -32,6 +32,7 @@ impl Renderer {
             let layer = MetalLayer::new();
             layer.set_device(&device);
             layer.set_pixel_format(MTLPixelFormat::BGRA8Unorm);
+            layer.set_opaque(false);
             layer.set_presents_with_transaction(false);
             // Disabling this option allows Skia's Blend Mode to work.
             // More about: https://developer.apple.com/documentation/quartzcore/cametallayer/1478168-framebufferonly
@@ -107,7 +108,7 @@ impl Renderer {
         };
 
         let canvas = surface.canvas();
-        canvas.clear(Color4f::new(1.0, 1.0, 1.0, 1.0));
+        canvas.clear(Color4f::new(0.0, 0.0, 0.0, 0.0));
         canvas.scale((self.scale_factor as f32, self.scale_factor as f32));
         f(&mut Painter::new(&canvas));
 

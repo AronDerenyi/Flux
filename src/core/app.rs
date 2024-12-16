@@ -14,11 +14,41 @@ use winit::{
     application::ApplicationHandler,
     dpi::{LogicalSize, PhysicalPosition, Size},
     event::{DeviceId, ElementState, MouseButton, WindowEvent},
-    event_loop::EventLoop,
-    window::{Window, WindowAttributes},
+    event_loop::{ActiveEventLoop, EventLoop},
+    platform::macos::WindowAttributesExtMacOS,
+    window::{Theme, Window, WindowAttributes, WindowId},
 };
 
+pub struct WindowOptions {
+    pub title: String,
+    pub size: Vec2,
+    pub background: WindowBackground,
+    pub show_title: bool,
+    pub show_buttons: bool,
+    pub show_titlebar: bool,
+}
+
+pub enum WindowBackground {
+    Opaque,
+    Transparent,
+    Blurred,
+}
+
+impl Default for WindowOptions {
+    fn default() -> Self {
+        Self {
+            title: "Flux".into(),
+            size: Vec2::new(800.0, 600.0),
+            background: WindowBackground::Opaque,
+            show_title: true,
+            show_buttons: true,
+            show_titlebar: true,
+        }
+    }
+}
+
 pub struct App {
+    window_options: WindowOptions,
     state: AppState,
     cursors: HashMap<DeviceId, Option<PhysicalPosition<f64>>>,
     tree: ViewTree,
@@ -33,7 +63,7 @@ enum AppState {
 }
 
 impl App {
-    pub fn run(root: impl View) {
+    pub fn run(window_options: WindowOptions, root: impl View) {
         let mut states = HashMap::new();
         let mut state_dependencies = Bigraph::new();
         let tree = ViewTree::build_from(
@@ -43,6 +73,7 @@ impl App {
         );
 
         let mut app = Self {
+            window_options,
             state: AppState::Uninitialized,
             cursors: HashMap::new(),
             tree,
@@ -57,14 +88,33 @@ impl App {
 }
 
 impl ApplicationHandler for App {
-    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if let AppState::Uninitialized = self.state {
-            let mut window_attributes = WindowAttributes::default();
-            window_attributes.title = "Flux".into();
-            window_attributes.inner_size = Some(Size::new(LogicalSize {
-                width: 800.0,
-                height: 600.0,
-            }));
+            let window_attributes = WindowAttributes::default()
+                .with_theme(Some(Theme::Light))
+                .with_title(self.window_options.title.clone())
+                .with_inner_size(Size::new(LogicalSize {
+                    width: self.window_options.size.x,
+                    height: self.window_options.size.y,
+                }))
+                .with_blur(
+                    if let WindowBackground::Blurred = self.window_options.background {
+                        true
+                    } else {
+                        false
+                    },
+                )
+                .with_transparent(
+                    if let WindowBackground::Opaque = self.window_options.background {
+                        false
+                    } else {
+                        true
+                    },
+                )
+                .with_title_hidden(!self.window_options.show_title)
+                .with_titlebar_buttons_hidden(!self.window_options.show_buttons)
+                .with_titlebar_transparent(!self.window_options.show_titlebar)
+                .with_fullsize_content_view(!self.window_options.show_titlebar);
 
             let window = event_loop.create_window(window_attributes).unwrap();
             let renderer = Renderer::new(&window);
@@ -76,9 +126,9 @@ impl ApplicationHandler for App {
 
     fn window_event(
         &mut self,
-        event_loop: &winit::event_loop::ActiveEventLoop,
-        window_id: winit::window::WindowId,
-        event: winit::event::WindowEvent,
+        event_loop: &ActiveEventLoop,
+        window_id: WindowId,
+        event: WindowEvent,
     ) {
         let AppState::Ok(window, renderer) = &mut self.state else {
             return;

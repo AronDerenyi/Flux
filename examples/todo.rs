@@ -1,7 +1,14 @@
 use flux_ui::prelude::*;
 
 fn main() {
-    App::run(ContentView);
+    App::run(
+        WindowOptions {
+            background: WindowBackground::Blurred,
+            show_titlebar: false,
+            ..Default::default()
+        },
+        ContentView,
+    );
 }
 
 #[derive(Clone, PartialEq)]
@@ -41,7 +48,8 @@ impl Component for ContentView {
             ],
         });
 
-        ListView { selected, todos }.background(0xE0E0E0)
+        col![spacer().height(28.0), ListView { selected, todos }]
+            .background(Color::from_rgba(255, 255, 255, 200))
     }
 }
 

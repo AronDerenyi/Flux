@@ -9,7 +9,7 @@ pub mod view_tree;
 
 pub mod prelude {
     pub use super::{
-        app::App,
+        app::{App, WindowBackground, WindowOptions},
         constraints::{Constraint, Constraints},
         context::{Binding, Context, ContextMut},
         interaction::Interaction,
