@@ -44,7 +44,7 @@ pub trait MouseListenerExt: View + Sized {
 
     fn on_click<A: Fn(&mut ContextMut) + 'static>(self, action: A) -> MouseListener {
         self.on_mouse(move |ctx, prev_state, state| {
-            if prev_state == MouseState::Hover && state == MouseState::Pressed {
+            if prev_state == MouseState::Pressed && state == MouseState::Hover {
                 action(ctx)
             }
         })
@@ -66,10 +66,8 @@ impl View for MouseListener {
                         if inside(size, point) {
                             *ctx.get_mut(state) = MouseState::Hover;
                             action(ctx, MouseState::Idle, MouseState::Hover);
-                            true
-                        } else {
-                            false
                         }
+                        false
                     }
                     (MouseState::Idle, Interaction::MouseDown(point)) => {
                         if inside(size, point) {
@@ -84,10 +82,8 @@ impl View for MouseListener {
                         if !inside(size, point) {
                             *ctx.get_mut(state) = MouseState::Idle;
                             action(ctx, MouseState::Hover, MouseState::Idle);
-                            true
-                        } else {
-                            false
                         }
+                        false
                     }
                     (MouseState::Hover, Interaction::MouseDown(point)) => {
                         if inside(size, point) {
