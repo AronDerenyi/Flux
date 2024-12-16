@@ -1,10 +1,11 @@
 [package]
 name = "flux-ui"
-authors = ["Áron Derényi"]
 version = "0.1.0-dev"
 edition = "2021"
-categories = ["ui", "gui"]
+authors = ["Áron Derényi"]
 description = "A SwiftUI inspired declarative UI framework for Rust"
+repository = "https://github.com/AronDerenyi/Flux"
+categories = ["graphics", "gui", "rendering"]
 
 [dependencies]
 itertools = "0.13.0"
