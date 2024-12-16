@@ -64,16 +64,19 @@ impl<A: Fn(&mut ContextMut) + 'static> View for Click<A> {
         interaction: Interaction,
         children: &[ViewInteractor],
     ) -> bool {
-        let Interaction::Click(point) = interaction;
         if children[0].interact(context, interaction.translate_into(layout.position)) {
             true
-        } else if point.x >= layout.position.x
-            && point.y >= layout.position.y
-            && point.x <= layout.position.x + layout.size.x
-            && point.y <= layout.position.y + layout.size.y
-        {
-            (self.action)(context);
-            true
+        } else if let Interaction::MouseDown(point) = interaction {
+            if point.x >= layout.position.x
+                && point.y >= layout.position.y
+                && point.x <= layout.position.x + layout.size.x
+                && point.y <= layout.position.y + layout.size.y
+            {
+                (self.action)(context);
+                true
+            } else {
+                false
+            }
         } else {
             false
         }
