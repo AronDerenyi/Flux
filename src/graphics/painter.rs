@@ -24,15 +24,42 @@ impl Painter<'_> {
     }
 
     pub fn draw_rect(&mut self, position: Vec2, size: Vec2, paint: impl Into<Paint>) {
-        self.canvas.draw_rect(
-            skia_safe::Rect::new(
-                position.x,
-                position.y,
-                position.x + size.x,
-                position.y + size.y,
-            ),
-            &paint.into().into(),
-        );
+        let paint = paint.into().into();
+        if let Some(paint) = paint {
+            self.canvas.draw_rect(
+                skia_safe::Rect::new(
+                    position.x,
+                    position.y,
+                    position.x + size.x,
+                    position.y + size.y,
+                ),
+                &paint,
+            );
+        }
+    }
+
+    pub fn draw_round_rect(
+        &mut self,
+        position: Vec2,
+        size: Vec2,
+        radius: f32,
+        paint: impl Into<Paint>,
+    ) {
+        let paint: Option<skia_safe::Paint> = paint.into().into();
+        if let Some(mut paint) = paint {
+            paint.set_anti_alias(true);
+            self.canvas.draw_round_rect(
+                skia_safe::Rect::new(
+                    position.x,
+                    position.y,
+                    position.x + size.x,
+                    position.y + size.y,
+                ),
+                radius,
+                radius,
+                &paint,
+            );
+        }
     }
 
     pub fn draw_paragraph(&mut self, text: &Text, position: Vec2, width: f32) {
@@ -44,21 +71,27 @@ impl Painter<'_> {
     }
 }
 
-impl From<Paint> for skia_safe::Paint {
+impl From<Paint> for Option<skia_safe::Paint> {
     fn from(paint: Paint) -> Self {
         let mut sk_paint = skia_safe::Paint::default();
         match paint {
             Paint::Fill { color } => {
+                if color.a == 0 {
+                    return None;
+                }
                 sk_paint.set_color(color);
             }
             Paint::Stroke { width, color } => {
+                if width == 0.0 || color.a == 0 {
+                    return None;
+                }
                 sk_paint.set_stroke(true);
                 sk_paint.set_color(color);
                 sk_paint.set_stroke_width(width);
                 sk_paint.set_stroke_miter(10.0);
             }
         }
-        sk_paint
+        Some(sk_paint)
     }
 }
 

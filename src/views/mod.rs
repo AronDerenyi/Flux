@@ -1,8 +1,7 @@
 #![allow(unused)]
-pub mod background;
-pub mod border;
 pub mod click;
 pub mod component;
+pub mod decoration;
 pub mod flex;
 pub mod label;
 pub mod padding;
@@ -10,10 +9,9 @@ pub mod spacer;
 
 pub mod prelude {
     pub use super::{
-        background::Backgroundable,
-        border::Borderable,
         click::Clickable,
         component::Component,
+        decoration::{Border, BoxDecoration, Decoratable, Decoration},
         flex::{col, row},
         label::label,
         padding::Paddable,

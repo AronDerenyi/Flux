@@ -86,7 +86,11 @@ impl Component for ListView {
                 spacer().height(0.0)
             ]
             .padding_all(16.0)
-            .background(Color::WHITE)
+            .background(BoxDecoration {
+                color: Some(Color::WHITE),
+                border: None,
+                radius: 8.0
+            })
             .on_click(move |ctx| {
                 let items = &mut ctx.get_mut(todos_binding).items;
                 items.push(Todo {
@@ -97,6 +101,7 @@ impl Component for ListView {
         ]
         .spacing(16.0)
         .padding_all(16.0)
+        .on_click(move |ctx| *ctx.get_mut(selected_binding) = None)
     }
 }
 
@@ -118,20 +123,27 @@ impl Component for ListItemView {
             spacer()
                 .width(20.0)
                 .height(20.0)
-                .background(Color::RED)
+                .background(BoxDecoration {
+                    color: Some(Color::RED),
+                    border: None,
+                    radius: 10.0
+                })
                 .on_click(move |ctx| {
                     ctx.get_mut(todos).items.remove(index);
                 })
         ]
         .padding_all(16.0)
-        .border(
-            2.0,
-            if self.selected {
-                0x404040.into()
+        .background(BoxDecoration {
+            color: Some(Color::WHITE),
+            border: if self.selected {
+                Some(Border {
+                    width: 2.0,
+                    color: 0x404040.into(),
+                })
             } else {
-                Color::TRANSPARENT
+                None
             },
-        )
-        .background(Color::WHITE)
+            radius: 8.0,
+        })
     }
 }
