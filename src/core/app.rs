@@ -225,7 +225,7 @@ impl ApplicationHandler for App {
                     return;
                 };
 
-                if state != ElementState::Pressed || button != MouseButton::Left {
+                if button != MouseButton::Left {
                     return;
                 }
 

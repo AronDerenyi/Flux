@@ -1,19 +1,19 @@
 #![allow(unused)]
-pub mod click;
 pub mod component;
 pub mod decoration;
 pub mod flex;
 pub mod label;
+pub mod mouse;
 pub mod padding;
 pub mod spacer;
 
 pub mod prelude {
     pub use super::{
-        click::Clickable,
         component::Component,
         decoration::{BorderDecoration, BoxDecoration, Decoratable, Decoration},
         flex::{col, row},
         label::label,
+        mouse::{MouseListenerExt, MouseState},
         padding::Paddable,
         spacer::spacer,
         ContentBuilder, ViewBuilder,

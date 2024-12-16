@@ -84,24 +84,9 @@ impl Component for ListView {
             ))
             .spacing(2.0),
             spacer(),
-            row![
-                spacer().height(0.0),
-                label("New item").size(16.0),
-                spacer().height(0.0)
-            ]
-            .padding_all(16.0)
-            .background(BoxDecoration {
-                color: Some(Color::WHITE),
-                border: None,
-                radius: 8.0
-            })
-            .on_click(move |ctx| {
-                let items = &mut ctx.get_mut(todos_binding).items;
-                items.push(Todo {
-                    name: format!("Item {}", items.len() + 1),
-                    done: false,
-                })
-            })
+            AddButton {
+                todos: todos_binding
+            }
         ]
         .spacing(16.0)
         .padding_all(16.0)
@@ -148,6 +133,44 @@ impl Component for ListItemView {
                 None
             },
             radius: 8.0,
+        })
+    }
+}
+
+#[derive(PartialEq)]
+struct AddButton {
+    todos: Binding<Todos>,
+}
+
+impl Component for AddButton {
+    fn build(&self, ctx: &mut Context) -> impl View {
+        let Self { todos } = *self;
+        let color = ctx.state(|| Color::WHITE);
+
+        row![
+            spacer().height(0.0),
+            label("New item").size(16.0),
+            spacer().height(0.0)
+        ]
+        .padding_all(16.0)
+        .background(BoxDecoration {
+            color: Some(*ctx.get(color)),
+            border: None,
+            radius: 8.0,
+        })
+        .on_mouse(move |ctx, prev_state, state| {
+            match state {
+                MouseState::Idle => *ctx.get_mut(color) = Color::WHITE,
+                MouseState::Hover => *ctx.get_mut(color) = 0xEFEFEF.into(),
+                MouseState::Pressed => *ctx.get_mut(color) = 0xDFDFDF.into(),
+            }
+            if state == MouseState::Hover && prev_state == MouseState::Pressed {
+                let items = &mut ctx.get_mut(todos).items;
+                items.push(Todo {
+                    name: format!("Item {}", items.len() + 1),
+                    done: false,
+                });
+            }
         })
     }
 }
