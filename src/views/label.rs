@@ -11,7 +11,7 @@ use crate::{
     graphics::{
         color::Color,
         painter::Painter,
-        paragraph::{Paragraph, ParagraphStyle},
+        text::{Text, TextStyle},
     },
 };
 use std::rc::Rc;
@@ -45,14 +45,14 @@ impl Label {
 
 impl View for Label {
     fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
-        let paragraph = Paragraph::new(
+        let text = Text::new(
             &self.text,
-            ParagraphStyle {
+            TextStyle {
                 size: self.size,
                 color: self.color,
             },
         );
-        vec![Rc::new(ParagraphView { paragraph })]
+        vec![Rc::new(TextView { text })]
     }
 
     fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
@@ -83,23 +83,23 @@ impl View for Label {
     }
 }
 
-struct ParagraphView {
-    paragraph: Paragraph,
+struct TextView {
+    text: Text,
 }
 
-impl PartialEq for ParagraphView {
+impl PartialEq for TextView {
     fn eq(&self, other: &Self) -> bool {
         false
     }
 }
 
-impl View for ParagraphView {
+impl View for TextView {
     fn build(&self, context: &mut Context) -> Vec<Rc<dyn View>> {
         Vec::new()
     }
 
     fn size(&self, constraints: Constraints, children: &[ViewSizer]) -> Vec2 {
-        self.paragraph.size(match constraints.width {
+        self.text.size(match constraints.width {
             Constraint::Ideal => f32::INFINITY,
             Constraint::Min => 0.0,
             Constraint::Max => f32::INFINITY,
@@ -112,7 +112,7 @@ impl View for ParagraphView {
     }
 
     fn draw(&self, layout: Layout, painter: &mut Painter, children: &[ViewDrawer]) {
-        painter.draw_paragraph(&self.paragraph, layout.position, layout.size.x);
+        painter.draw_paragraph(&self.text, layout.position, layout.size.x);
     }
 
     fn interact(

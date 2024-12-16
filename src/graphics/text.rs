@@ -4,24 +4,24 @@ use skia_safe::{
     font_style::{Slant, Weight, Width},
     textlayout::{
         FontCollection, Paragraph as SkParagraph, ParagraphBuilder,
-        ParagraphStyle as SkParagraphStyle, TextAlign, TextStyle,
+        ParagraphStyle as SkParagraphStyle, TextAlign, TextStyle as SkTextStyle,
     },
     FontMgr, FontStyle,
 };
 use std::cell::RefCell;
 
-pub struct ParagraphStyle {
+pub struct TextStyle {
     pub size: f32,
     pub color: Color,
 }
 
-pub struct Paragraph {
-    pub(super) sk_paragraph: RefCell<SkParagraph>,
+pub struct Text {
+    pub(super) paragraph: RefCell<SkParagraph>,
 }
 
-impl Paragraph {
-    pub fn new(text: impl AsRef<str>, style: ParagraphStyle) -> Self {
-        let mut text_style = TextStyle::new();
+impl Text {
+    pub fn new(text: impl AsRef<str>, style: TextStyle) -> Self {
+        let mut text_style = SkTextStyle::new();
         text_style.set_font_size(style.size);
         text_style.set_letter_spacing(1.2);
         text_style.set_color(skia_safe::Color::from_argb(
@@ -47,19 +47,19 @@ impl Paragraph {
             .build();
 
         Self {
-            sk_paragraph: RefCell::new(paragraph),
+            paragraph: RefCell::new(paragraph),
         }
     }
 
     pub fn size(&self, width: f32) -> Vec2 {
-        let mut sk_paragraph = self.sk_paragraph.borrow_mut();
-        if sk_paragraph.max_width() != width {
-            sk_paragraph.layout(width);
+        let mut paragraph = self.paragraph.borrow_mut();
+        if paragraph.max_width() != width {
+            paragraph.layout(width);
         }
 
         Vec2::new(
-            width.min(sk_paragraph.max_intrinsic_width().ceil()),
-            sk_paragraph.height(),
+            width.min(paragraph.max_intrinsic_width().ceil()),
+            paragraph.height(),
         )
     }
 }

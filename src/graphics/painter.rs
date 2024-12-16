@@ -1,4 +1,4 @@
-use super::{color::Color, paint::Paint, paragraph::Paragraph};
+use super::{color::Color, paint::Paint, text::Text};
 use crate::math::Vec2;
 use skia_safe::{Canvas, Point, Vector};
 
@@ -35,12 +35,12 @@ impl Painter<'_> {
         );
     }
 
-    pub fn draw_paragraph(&mut self, paragraph: &Paragraph, position: Vec2, width: f32) {
-        let mut sk_paragraph = paragraph.sk_paragraph.borrow_mut();
-        if sk_paragraph.max_width() != width {
-            sk_paragraph.layout(width);
+    pub fn draw_paragraph(&mut self, text: &Text, position: Vec2, width: f32) {
+        let mut paragraph = text.paragraph.borrow_mut();
+        if paragraph.max_width() != width {
+            paragraph.layout(width);
         }
-        sk_paragraph.paint(self.canvas, Point::new(position.x, position.y));
+        paragraph.paint(self.canvas, Point::new(position.x, position.y));
     }
 }
 
