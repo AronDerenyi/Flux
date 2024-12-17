@@ -118,6 +118,7 @@ pub struct BoxDecoration {
     pub color: Option<Color>,
     pub border: Option<BorderDecoration>,
     pub radius: f32,
+    pub smoothing: f32,
 }
 
 impl Decoration for BoxDecoration {
@@ -126,7 +127,7 @@ impl Decoration for BoxDecoration {
             if self.radius == 0.0 {
                 painter.draw_rect(Vec2::ZERO, size, color);
             } else {
-                painter.draw_round_rect(Vec2::ZERO, size, self.radius, color);
+                painter.draw_round_rect(Vec2::ZERO, size, self.radius, self.smoothing, color);
             }
         }
         if let Some(border) = self.border {
@@ -137,6 +138,7 @@ impl Decoration for BoxDecoration {
                     Vec2::ZERO,
                     size,
                     self.radius,
+                    self.smoothing,
                     Paint::stroke(border.width, border.color),
                 );
             }

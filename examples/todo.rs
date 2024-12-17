@@ -84,6 +84,54 @@ impl Component for ListView {
             ))
             .spacing(2.0),
             spacer(),
+            row![
+                spacer().height(0.0),
+                spacer()
+                    .width(100.0)
+                    .height(100.0)
+                    .background(BoxDecoration {
+                        color: Some(Color::WHITE),
+                        border: None,
+                        radius: 32.0,
+                        smoothing: 1.0,
+                    })
+                    .background(BoxDecoration {
+                        color: Some(Color::BLACK),
+                        border: None,
+                        radius: 32.0,
+                        smoothing: 0.0,
+                    }),
+                spacer()
+                    .width(100.0)
+                    .height(100.0)
+                    .background(BoxDecoration {
+                        color: Some(Color::BLACK),
+                        border: None,
+                        radius: 32.0,
+                        smoothing: 0.0,
+                    }),
+                spacer()
+                    .width(100.0)
+                    .height(100.0)
+                    .background(BoxDecoration {
+                        color: Some(Color::BLACK),
+                        border: None,
+                        radius: 32.0,
+                        smoothing: 0.6,
+                    }),
+                spacer()
+                    .width(100.0)
+                    .height(100.0)
+                    .background(BoxDecoration {
+                        color: Some(Color::BLACK),
+                        border: None,
+                        radius: 32.0,
+                        smoothing: 1.0,
+                    }),
+                spacer().height(0.0)
+            ]
+            .spacing(8.0),
+            spacer(),
             AddButton {
                 todos: todos_binding
             }
@@ -118,6 +166,7 @@ impl Component for ListItemView {
                     color: Some(Color::RED),
                     border: None,
                     radius: 32.0,
+                    smoothing: 0.6,
                 })
                 .on_click(move |ctx| {
                     ctx.get_mut(todos).items.remove(index);
@@ -135,6 +184,7 @@ impl Component for ListItemView {
                 None
             },
             radius: 8.0,
+            smoothing: 0.6,
         })
     }
 }
@@ -159,6 +209,7 @@ impl Component for AddButton {
             color: Some(*ctx.get(color)),
             border: None,
             radius: 8.0,
+            smoothing: 0.6,
         })
         .on_mouse(move |ctx, prev_state, state| {
             match state {
