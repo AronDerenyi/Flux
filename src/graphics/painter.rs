@@ -123,6 +123,7 @@ impl From<Color> for skia_safe::Color {
     }
 }
 
+// Smoothing functions based on https://www.figma.com/blog/desperately-seeking-squircles/
 struct Smoothing {
     contact: Vec2,
     intersection: f32,
